@@ -1,0 +1,35 @@
+diff --git a/src/reports/routes.ts b/src/reports/routes.ts
+new file mode 100644
+--- /dev/null
++++ b/src/reports/routes.ts
+@@ -0,0 +1,19 @@
++import type { FastifyInstance } from "fastify";
++import { withCompany } from "../db.js";
++
++// Returned by GET /reports/monthly and shown on the dashboard's reports page.
++export interface MonthlyTotal {
++  category: string;
++  total: string;
++}
++
++export function registerReports(app: FastifyInstance) {
++  app.get("/reports/monthly", {
++    schema: { querystring: { type: "object", required: ["month"], properties: { month: { type: "string", pattern: "^\\d{4}-\\d{2}$" } } } },
++  }, async (req): Promise<MonthlyTotal[]> => {
++    const { month } = req.query as { month: string };
++    return withCompany(req.user!.companyId, async (db) => (await db.query<MonthlyTotal>(
++      `SELECT category, (sum(amount_cents) / 100.0)::text AS total FROM expenses
++       WHERE to_char(spent_on, 'YYYY-MM') = $1 GROUP BY category`, [month])).rows);
++  });
++}
+diff --git a/web/src/reports.ts b/web/src/reports.ts
+new file mode 100644
+--- /dev/null
++++ b/web/src/reports.ts
+@@ -0,0 +1,6 @@
++export type MonthlyTotal = { category: string; total: string };
++
++export async function monthly(token: string, month: string): Promise<MonthlyTotal[]> {
++  const res = await fetch(`/api/reports/monthly?month=${month}`, { headers: { authorization: `Bearer ${token}` } });
++  return res.json();
++}

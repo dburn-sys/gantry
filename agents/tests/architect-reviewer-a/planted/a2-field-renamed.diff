@@ -1,0 +1,24 @@
+diff --git a/src/contracts/index.ts b/src/contracts/index.ts
+--- a/src/contracts/index.ts
++++ b/src/contracts/index.ts
+@@ -4,7 +4,7 @@
+   category: string;
+   amount: string;
+   currency: string;
+-  spentOn: string;
++  spentAt: string;
+   createdAt: string;
+   userId: string | null;
+   status: ExpenseStatus;
+diff --git a/src/app.ts b/src/app.ts
+--- a/src/app.ts
++++ b/src/app.ts
+@@ -1 +1 @@
+-    spentOn: row.spent_on,
++    spentAt: row.spent_on,
+diff --git a/web/src/ExpenseList.tsx b/web/src/ExpenseList.tsx
+--- a/web/src/ExpenseList.tsx
++++ b/web/src/ExpenseList.tsx
+@@ -1 +1 @@
+-            <span>{e.amount} {e.currency}</span> <span>{e.spentOn}</span>
++            <span>{e.amount} {e.currency}</span> <span>{e.spentAt}</span>

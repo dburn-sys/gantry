@@ -9,6 +9,9 @@ from pathlib import Path
 AGENT, RUNS = sys.argv[1], int(os.environ.get("RUNS", "3"))
 HERE = Path(__file__).parent / AGENT
 PLUGIN = Path(__file__).parents[2]
+# Architect reviewers read the project's .gantry/architecture/, so they run in a
+# small fixture project instead of the current folder.
+PROJECT = Path(__file__).parent / "architect-project" if AGENT.startswith("architect-reviewer") else None
 
 
 def review(diff: str) -> str:
@@ -18,11 +21,16 @@ def review(diff: str) -> str:
         ["claude", "-p", prompt, "--plugin-dir", str(PLUGIN),
          "--add-dir", str(PLUGIN),          # so the agent can read standards/
          "--output-format", "json"],
-        capture_output=True, text=True, timeout=600)
+        capture_output=True, text=True, timeout=600, cwd=PROJECT)
     return json.loads(out.stdout)["result"]
 
 
 def rules_found(report: str) -> set[str]:
+    if PROJECT:   # architect reviewers: rules cited in FAIL rows of a NON-CONFORMANT checklist
+        if not re.search(r"verdict\s*\n+\s*NON-CONFORMANT", report):
+            return set()
+        fails = [row for row in report.splitlines() if re.search(r"\|\s*FAIL\s*\|", row)]
+        return {r for row in fails for r in re.findall(r"\b([A-E]-\d+)\b", row)}
     return set(re.findall(r"\|\s*(?:CRITICAL|HIGH|MEDIUM|LOW)\s*\|\s*([A-Z]+-\d+)", report))
 
 

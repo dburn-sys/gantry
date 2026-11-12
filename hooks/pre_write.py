@@ -24,8 +24,15 @@ def is_protected(path: Path, root: Path) -> bool:
     if plugin and Path(plugin).resolve() in [path, *path.parents]:
         return True
     protected = {"secrets-allow.txt", "evidence.jsonl", "unproven.log", "approvals.jsonl",
-                 "overrides.log", "override-token.json", "accepted-findings.log"}
-    return path.name in protected and path.parent.name == ".gantry"
+                 "overrides.log", "override-token.json", "accepted-findings.log",
+                 "conformance.jsonl"}
+    if path.name in protected and path.parent.name == ".gantry":
+        return True
+    rel = path.relative_to(root).as_posix() if root in path.parents else ""
+    # The architecture is a set of human decisions; agents and settings change
+    # what Gantry and Claude Code do in future sessions.
+    return (rel.startswith(".gantry/architecture/") or rel.startswith(".claude/agents/")
+            or (rel.startswith(".claude/settings") and rel.endswith(".json")))
 
 
 def changes_status_line(path: Path, tool: str, inp: dict) -> bool:

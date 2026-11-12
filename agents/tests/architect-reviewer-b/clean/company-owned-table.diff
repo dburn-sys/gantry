@@ -1,0 +1,22 @@
+diff --git a/migrations/009_mileage.sql b/migrations/009_mileage.sql
+new file mode 100644
+--- /dev/null
++++ b/migrations/009_mileage.sql
+@@ -0,0 +1,17 @@
++-- Mileage claims: company-owned (ADR-0001, rules B-1 and B-2).
++CREATE TABLE mileage_claims (
++  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
++  company_id  uuid NOT NULL REFERENCES companies(id)
++              DEFAULT nullif(current_setting('tally.company_id', true), '')::uuid,
++  user_id     uuid NOT NULL,
++  miles       integer NOT NULL CHECK (miles > 0),
++  cents       bigint NOT NULL CHECK (cents > 0),
++  claimed_on  date NOT NULL,
++  FOREIGN KEY (user_id, company_id) REFERENCES users (id, company_id)
++);
++CREATE INDEX mileage_claims_company ON mileage_claims (company_id);
++ALTER TABLE mileage_claims ENABLE ROW LEVEL SECURITY;
++ALTER TABLE mileage_claims FORCE ROW LEVEL SECURITY;
++CREATE POLICY company_isolation ON mileage_claims
++  USING (company_id = nullif(current_setting('tally.company_id', true), '')::uuid)
++  WITH CHECK (company_id = nullif(current_setting('tally.company_id', true), '')::uuid);

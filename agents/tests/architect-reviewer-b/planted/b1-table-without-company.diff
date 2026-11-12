@@ -1,0 +1,12 @@
+diff --git a/migrations/009_mileage.sql b/migrations/009_mileage.sql
+new file mode 100644
+--- /dev/null
++++ b/migrations/009_mileage.sql
+@@ -0,0 +1,7 @@
++CREATE TABLE mileage_claims (
++  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
++  user_id     uuid NOT NULL REFERENCES users(id),
++  miles       integer NOT NULL CHECK (miles > 0),
++  cents       bigint NOT NULL CHECK (cents > 0),
++  claimed_on  date NOT NULL
++);

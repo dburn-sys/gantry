@@ -23,3 +23,4 @@ A blocking review finding can be accepted, rather than fixed, only by a person:
 | `G-MIGRATION` | Edits to committed migrations | 14 |
 | `G-FINDINGS` | Commits while a review finding has no disposition, or a CRITICAL or HIGH finding is neither fixed nor accepted by a person | 14, 18 |
 | `G-SUBAGENT` | Subagents committing, pushing, merging, or rebasing | 18 |
+| `G-ARCH` | Commits touching an architecture section without a CONFORMANT review of the current code | 19 |

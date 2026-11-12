@@ -23,6 +23,7 @@ disable-model-invocation: true
        unproven.log
        override-token.json
        intent-samples.jsonl
+       conformance.jsonl
 
 4. Tell the user to commit `.gantry/` and start a new session so the
    Gantry hooks pick it up.

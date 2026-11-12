@@ -10,6 +10,7 @@ from _gantry import (current_branch, deny_unless_overridden, gantry_root,  # noq
                      lane_of, latest_run, read_config, read_input, run_hook,
                      tree_fingerprint)
 from _secrets import scan  # noqa: E402
+from _gantry import SECTION_FILES, latest_verdicts, sections_touched  # noqa: E402
 
 PROTECTED = {"main", "master"}
 GIT_OPTS_WITH_VALUE = {"-c", "-C", "--git-dir", "--work-tree", "--namespace"}
@@ -87,6 +88,31 @@ def accepted_findings(root: Path, run: str) -> set[str]:
         if len(fields) >= 5 and fields[3] == run:
             out.add(fields[4])
     return out
+
+
+def check_conformance(root: Path) -> None:
+    """G-ARCH: every touched architecture section has a CONFORMANT review of this exact tree."""
+    arch = root / ".gantry" / "architecture"
+    if not arch.is_dir():
+        return                                   # not architecture-gated
+    present = {s for s in sections_touched(root)
+               if s in SECTION_FILES and (arch / SECTION_FILES[s]).exists()}
+    if not present:
+        return
+    tree = tree_fingerprint(root)
+    latest = latest_verdicts(root)
+    for s in sorted(present):
+        r = latest.get(s)
+        if r is None or r.get("tree") != tree:
+            deny_unless_overridden(root, "G-ARCH",
+                f"Gantry: Section {s} is touched and has no conformance review of "
+                "the current code. Run the gantry:conformance skill, then commit again.")
+            return
+        if r.get("verdict") != "CONFORMANT":
+            deny_unless_overridden(root, "G-ARCH",
+                f"Gantry: Section {s} is NON-CONFORMANT. Fix the failing checklist "
+                "items through gantry:tdd, re-run gantry:conformance, then commit.")
+            return
 
 
 def check_evidence(root: Path, test_command: str) -> None:
@@ -239,6 +265,7 @@ def main() -> None:
                 except _Allowed:
                     pass
             check_findings(root, branch)
+            check_conformance(root)
 
 
 if __name__ == "__main__":

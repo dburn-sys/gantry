@@ -1,0 +1,22 @@
+diff --git a/Dockerfile b/Dockerfile
+new file mode 100644
+--- /dev/null
++++ b/Dockerfile
+@@ -0,0 +1,17 @@
++# Base image pinned by digest (E-1). Update with: docker pull node:22-bookworm-slim
++FROM node:22-bookworm-slim@sha256:6e2a4b1c3f9d8e7a5b0c2d4e6f8a1b3c5d7e9f0a2b4c6d8e0f1a3b5c7d9e1f2a AS build
++WORKDIR /app
++COPY package.json package-lock.json ./
++RUN npm ci
++COPY tsconfig.json ./
++COPY src ./src
++RUN npx tsc -p . && npm prune --omit=dev
++
++FROM node:22-bookworm-slim@sha256:6e2a4b1c3f9d8e7a5b0c2d4e6f8a1b3c5d7e9f0a2b4c6d8e0f1a3b5c7d9e1f2a
++WORKDIR /app
++ENV NODE_ENV=production
++COPY --from=build /app/node_modules ./node_modules
++COPY --from=build /app/dist ./dist
++COPY package.json ./
++USER node
++CMD ["node", "dist/src/server.js"]

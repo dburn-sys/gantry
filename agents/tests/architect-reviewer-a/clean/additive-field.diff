@@ -1,0 +1,23 @@
+diff --git a/src/contracts/index.ts b/src/contracts/index.ts
+--- a/src/contracts/index.ts
++++ b/src/contracts/index.ts
+@@ -8,4 +8,6 @@
+   createdAt: string;
+   userId: string | null;
+   status: ExpenseStatus;
++  /** Set when the expense was created from a receipt suggestion. Optional: older clients ignore it. */
++  fromReceipt?: boolean;
+ };
+diff --git a/src/app.ts b/src/app.ts
+--- a/src/app.ts
++++ b/src/app.ts
+@@ -1,2 +1,3 @@
+     status: row.status as ExpenseStatus,
++    fromReceipt: row.from_receipt ?? undefined,
+   };
+diff --git a/web/src/ExpenseList.tsx b/web/src/ExpenseList.tsx
+--- a/web/src/ExpenseList.tsx
++++ b/web/src/ExpenseList.tsx
+@@ -1 +1,2 @@
+             <span>{e.description}</span> <span>{e.category}</span>{" "}
++            {e.fromReceipt && <span aria-label="from a receipt">(receipt)</span>}{" "}

@@ -224,7 +224,7 @@ def runs_on(root: Path, branch: str) -> list[dict]:
 
 GATES = {"G-MAIN", "G-FORCE", "G-SECRET", "G-HARNESS", "G-EVIDENCE", "G-SPEC", "G-FIX",
          "G-CHORE", "G-LANE", "G-SPIKE", "G-REFACTOR", "G-MIGRATION", "G-FINDINGS",
-         "G-SUBAGENT"}
+         "G-SUBAGENT", "G-ARCH"}
 TOKEN_MINUTES = 10
 
 
@@ -278,3 +278,53 @@ def deny_unless_overridden(root: Path, gate: str, reason: str) -> None:
                          [now_iso(), t.get("by", "unknown"), gate, current_branch(root), "used"])
             return
     deny(f"[{gate}] {reason}")
+
+
+# --- Chapter 19: architecture conformance -------------------------------------
+
+SECTION_FILES = {"A": "A-services.md", "B": "B-data.md", "C": "C-security.md",
+                 "D": "D-ai.md", "E": "E-cloud.md"}
+
+
+def changed_paths(root: Path) -> list[str]:
+    """Every path that differs from HEAD, staged or not, plus untracked files."""
+    _, diff = git_out(root, "diff", "HEAD", "--name-only")
+    _, untracked = git_out(root, "ls-files", "--others", "--exclude-standard")
+    return sorted({p for p in (diff + "\n" + untracked).splitlines() if p.strip()})
+
+
+def section_map(root: Path) -> dict[str, list[str]]:
+    """Parse .gantry/architecture/sections.md: section letter -> path patterns."""
+    f = root / ".gantry" / "architecture" / "sections.md"
+    out: dict[str, list[str]] = {}
+    if not f.exists():
+        return out
+    for line in f.read_text(encoding="utf-8").splitlines():
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) >= 2 and len(cells[0]) == 1 and cells[0].isalpha():
+            pats = [p.split(" (")[0].strip() for p in cells[1].split(",")]
+            out[cells[0].upper()] = [p for p in pats if p and not p.startswith("any ")] + \
+                [p[4:].strip() for p in pats if p.startswith("any ")]
+    return out
+
+
+def sections_touched(root: Path, paths: list[str] | None = None) -> set[str]:
+    paths = changed_paths(root) if paths is None else paths
+    touched = set()
+    for section, patterns in section_map(root).items():
+        if any(_matches(p, pat) for p in paths for pat in patterns):
+            touched.add(section)
+    return touched
+
+
+def latest_verdicts(root: Path) -> dict[str, dict]:
+    f = root / ".gantry" / "conformance.jsonl"
+    out: dict[str, dict] = {}
+    if f.exists():
+        for line in f.read_text(encoding="utf-8").splitlines():
+            try:
+                r = json.loads(line)
+            except ValueError:
+                continue
+            out[r.get("section", "?")] = r
+    return out

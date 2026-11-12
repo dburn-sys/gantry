@@ -1,0 +1,23 @@
+diff --git a/infra/db.tf b/infra/db.tf
+new file mode 100644
+--- /dev/null
++++ b/infra/db.tf
+@@ -0,0 +1,18 @@
++resource "azurerm_postgresql_flexible_server" "db" {
++  name                          = "tally-${var.env}-db"
++  resource_group_name           = azurerm_resource_group.tally.name
++  location                      = var.location
++  version                       = "16"
++  sku_name                      = "B_Standard_B1ms"
++  public_network_access_enabled = true
++  administrator_login           = "tally_owner"
++  administrator_password        = random_password.db_owner.result
++  tags                          = local.tags
++}
++
++resource "azurerm_postgresql_flexible_server_firewall_rule" "anywhere" {
++  name             = "allow-all"
++  server_id        = azurerm_postgresql_flexible_server.db.id
++  start_ip_address = "0.0.0.0"
++  end_ip_address   = "255.255.255.255"
++}

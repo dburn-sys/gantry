@@ -1,0 +1,9 @@
+diff --git a/src/ai/receipts/reader.ts b/src/ai/receipts/reader.ts
+--- a/src/ai/receipts/reader.ts
++++ b/src/ai/receipts/reader.ts
+@@ -1,4 +1,3 @@
+ export function buildPrompt(ocrText: string): string {
+-  const fenced = ocrText.replaceAll("</receipt>", "</ receipt>");   // can't close the fence early
+-  return `${INSTRUCTIONS}\n\n<receipt>\n${fenced}\n</receipt>`;
++  return `${INSTRUCTIONS}\n\nReceipt:\n${ocrText}`;
+ }

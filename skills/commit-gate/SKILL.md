@@ -40,6 +40,13 @@ or "working." Describe what changed, not how good it is.
 **If not:** show the findings table to the user. Route each HIGH or CRITICAL
 finding to the gantry:tdd skill, then run this skill again from Phase 1.
 
+## Phase 3b: Conformance
+If `.gantry/architecture/` exists, run the gantry:conformance skill.
+**Exit when:** every touched section with a section file is CONFORMANT.
+**If not:** show the failing checklist items. Route each one to the gantry:tdd
+skill, then run this skill again from Phase 1. Do not write conformance
+records yourself; Gantry records each architect reviewer's verdict.
+
 ## Phase 4: Changes
 Run `git status --short` and list every changed and untracked file.
 **Exit when:** the user has said which files to stage.

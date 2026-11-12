@@ -55,6 +55,19 @@
             "command": "python -c \"\" || python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/post_bash.py\""
           }
         ]
+      },
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/post_agent.py\""
+          },
+          {
+            "type": "command",
+            "command": "python -c \"\" || python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/post_agent.py\""
+          }
+        ]
       }
     ],
     "PostToolUseFailure": [

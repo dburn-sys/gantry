@@ -1,0 +1,7 @@
+diff --git a/src/ai/receipts/reader.ts b/src/ai/receipts/reader.ts
+--- a/src/ai/receipts/reader.ts
++++ b/src/ai/receipts/reader.ts
+@@ -1 +1,2 @@
+-- amount: the final total paid, after tax and tip, as a decimal string like "84.50"
++- amount: the final total paid, after tax and tip, as a decimal string like "84.50".
++  If there are several totals (subtotal, total, card total), use the last one paid.

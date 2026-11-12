@@ -12,6 +12,13 @@ single pass; the release checklist (Chapter 22) runs three.
 | migration-reviewer | 4 | 2 | 0 | 0 |
 | ai-reviewer | 4 | 2 | 0 | 0 |
 | coverage-auditor | 4 | 2 | 0 | 0 |
+| architect-reviewer-a to -e | 10 | 5 | 0 | 0 |
+
+Architect reviewers run in `agents/tests/architect-project/`, a fixture holding a
+copy of Tally's `.gantry/architecture/`, and are scored by checklist: a planted
+case passes when the verdict is NON-CONFORMANT with its rule in a FAIL row; a
+clean case passes when the verdict is CONFORMANT. They needed no tuning, which
+is the checklist format doing its job.
 
 ## What tuning found
 

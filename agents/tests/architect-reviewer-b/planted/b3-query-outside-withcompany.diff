@@ -1,0 +1,12 @@
+diff --git a/src/approvals/service.ts b/src/approvals/service.ts
+--- a/src/approvals/service.ts
++++ b/src/approvals/service.ts
+@@ -1 +1,8 @@
++/** For the dashboard's badge: how many expenses are waiting. */
++export async function pendingCount(): Promise<number> {
++  const { rows } = await pool.query<{ n: number }>(
++    "SELECT count(*)::int AS n FROM expenses WHERE status = 'submitted'");
++  return rows[0].n;
++}
++
+ export async function history(db: pg.PoolClient, expenseId: string) {
