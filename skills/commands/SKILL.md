@@ -11,4 +11,5 @@ commands that aren't listed.
 | --- | --- |
 | `/gantry:commit [summary]` | Commit through the commit gate |
 | `/gantry:tdd` | Drive a behavior change test-first (Claude also starts this on its own) |
+| `/gantry:init` | Opt this repository into Gantry |
 | `/gantry:commands` | Show this list |
