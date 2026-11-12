@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from _gantry import emit, gantry_root, read_input, run_hook  # noqa: E402
+from _gantry import emit, gantry_root, git_email, read_input, run_hook  # noqa: E402
 
 LIMIT = 9500  # Claude Code caps additionalContext at 10,000 characters
 
@@ -19,7 +19,9 @@ def main() -> None:
     state_file = root / ".gantry" / "context.md"
     state = state_file.read_text(encoding="utf-8") if state_file.exists() else ""
 
-    text = (f"Gantry is active in this repository ({root.name}).\n\n"
+    note = ("\n\nNote: git has no user.email set here, so overrides will be "
+            "recorded as 'unknown'. Ask the user to set it.") if git_email(root) == "unknown" else ""
+    text = (f"Gantry is active in this repository ({root.name}).{note}\n\n"
             f"{persona}\n\n## Current project state\n\n{state}")
     emit({"hookSpecificOutput": {
         "hookEventName": "SessionStart",

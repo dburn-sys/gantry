@@ -17,4 +17,6 @@ commands that aren't listed.
 | `/gantry:chore <name>` | Start a chore: docs, dependencies, config; no source changes |
 | `/gantry:refactor <name>` | Restructure with no behavior change |
 | `/gantry:spike <name>` | Run an experiment that can never merge |
+| `/gantry:adr <name>` | Record a decision as an ADR |
+| `/gantry:audit [range]` | Summarize overrides, approvals, ADRs, and findings |
 | `/gantry:commands` | Show this list |

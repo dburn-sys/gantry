@@ -4,9 +4,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from _gantry import (approved, current_branch, deny, existed_at_branch_point,  # noqa: E402
-                     gantry_root, is_source, is_test_file, lane_of, read_config,
-                     read_input, run_hook, runs_on)
+from _gantry import (approved, current_branch, deny_unless_overridden,  # noqa: E402
+                     existed_at_branch_point, gantry_root, git_out, is_source,
+                     is_test_file, lane_of, read_config, read_input, run_hook, runs_on)
 from _secrets import scan  # noqa: E402
 
 
@@ -23,7 +23,8 @@ def is_protected(path: Path, root: Path) -> bool:
     plugin = os.environ.get("CLAUDE_PLUGIN_ROOT")
     if plugin and Path(plugin).resolve() in [path, *path.parents]:
         return True
-    protected = {"secrets-allow.txt", "evidence.jsonl", "unproven.log", "approvals.jsonl"}
+    protected = {"secrets-allow.txt", "evidence.jsonl", "unproven.log", "approvals.jsonl",
+                 "overrides.log", "override-token.json"}
     return path.name in protected and path.parent.name == ".gantry"
 
 
@@ -48,34 +49,45 @@ def check_lane_gates(root: Path, path: Path, config: dict) -> None:
     lane = lane_of(branch)
     if lane == "refactor" and is_test_file(path, root) and path.exists() \
             and existed_at_branch_point(root, path):
-        deny("Gantry: refactor lane. Existing tests are frozen here, because "
+        deny_unless_overridden(root, "G-REFACTOR", "Gantry: refactor lane. Existing tests are frozen here, because "
              "passing them unchanged is the proof that behavior didn't change. "
              "If a test must change, this is a fix or a feature.")
     if not source:
         return                                  # tests, docs, config: not gated
     if lane is None:
-        deny(f"Gantry: branch {branch} has no lane. Rename it with "
+        deny_unless_overridden(root, "G-LANE", f"Gantry: branch {branch} has no lane. Rename it with "
              "`git branch -m <lane>/<name>` (feat, fix, chore, refactor, or spike), "
              "or ask the user which kind of work this is.")
     if lane == "feat":
         slug = branch.removeprefix("feat/")
         if not approved(root, slug):
-            deny(f"Gantry: no approved spec for {slug}. Feature code can't be "
+            deny_unless_overridden(root, "G-SPEC", f"Gantry: no approved spec for {slug}. Feature code can't be "
                  f"written until .gantry/specs/{slug}.md is approved. Run the "
                  "gantry:brainstorming skill, then ask the user to type "
                  f"`approve spec {slug}`.")
     if lane == "fix" and not any(not r["passed"] for r in runs_on(root, branch)):
-        deny("Gantry: fix lane. Write a test that reproduces the bug and run it "
+        deny_unless_overridden(root, "G-FIX", "Gantry: fix lane. Write a test that reproduces the bug and run it "
              "so it fails, before changing source. The failing run is the proof "
              "the bug exists; the later passing run is the proof the fix works.")
     if lane == "chore":
-        deny("Gantry: chore lane. Chores don't change source code. This change "
+        deny_unless_overridden(root, "G-CHORE", "Gantry: chore lane. Chores don't change source code. This change "
              "touches source, so it's a fix or a feature. Tell the user, and "
              "suggest /gantry:fix or /gantry:feature.")
     if lane == "refactor" and not any(r["passed"] and r["scope"] == "full"
                                       for r in runs_on(root, branch)):
-        deny("Gantry: refactor lane. Run the full suite first so there's a "
+        deny_unless_overridden(root, "G-REFACTOR", "Gantry: refactor lane. Run the full suite first so there's a "
              "green baseline to compare against.")
+
+
+def check_migration_gate(root: Path, path: Path, config: dict) -> None:
+    mig_dir = (root / config.get("migrations_dir", "migrations")).resolve()
+    if mig_dir not in path.parents:
+        return
+    rel = path.resolve().relative_to(root.resolve()).as_posix()
+    if git_out(root, "cat-file", "-e", f"HEAD:{rel}")[0] == 0:
+        deny_unless_overridden(root, "G-MIGRATION",
+            f"Gantry: {path.name} is already committed. Databases that ran it won't "
+            "run it again. Write a new numbered migration instead.")
 
 
 def load_allowlist(root: Path) -> set[str]:
@@ -98,20 +110,22 @@ def main() -> None:
     path = (root / inp.get("file_path", "")).resolve()
 
     if is_protected(path, root):
-        deny(f"Gantry: {path.name} is part of the harness and can't be "
+        deny_unless_overridden(root, "G-HARNESS", f"Gantry: {path.name} is part of the harness and can't be "
              "changed by the agent. Tell the user what you wanted to change.")
 
     if changes_status_line(path, tool, inp):
-        deny("Gantry: a spec's Status line is written only when the user types "
+        deny_unless_overridden(root, "G-HARNESS", "Gantry: a spec's Status line is written only when the user types "
              "the approval phrase. Leave it as it is.")
 
-    check_lane_gates(root, path, read_config(root))
+    config = read_config(root)
+    check_migration_gate(root, path, config)
+    check_lane_gates(root, path, config)
 
     allowed = load_allowlist(root)
     findings = [f for f in scan(new_text(tool, inp)) if f.preview not in allowed]
     if findings:
         lines = "; ".join(f"line {f.line}: {f.kind} ({f.preview})" for f in findings)
-        deny(f"Gantry: possible secret in {path.name}: {lines}. Read the "
+        deny_unless_overridden(root, "G-SECRET", f"Gantry: possible secret in {path.name}: {lines}. Read the "
              "value from an environment variable instead, and put a "
              "placeholder in any example file. In tests, generate the value "
              "at runtime. If this is a false positive, stop and tell the "

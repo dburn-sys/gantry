@@ -185,3 +185,62 @@ def existed_at_branch_point(root: Path, path: Path) -> bool:
 
 def runs_on(root: Path, branch: str) -> list[dict]:
     return [r for r in ledger_records(root) if r.get("branch") == branch]
+
+
+# ---- Chapter 14: overrides and hash-chained logs ------------------------------
+
+GATES = {"G-MAIN", "G-FORCE", "G-SECRET", "G-HARNESS", "G-EVIDENCE", "G-SPEC", "G-FIX",
+         "G-CHORE", "G-LANE", "G-SPIKE", "G-REFACTOR", "G-MIGRATION", "G-FINDINGS"}
+TOKEN_MINUTES = 10
+
+
+def _sha8(text: str) -> str:
+    import hashlib
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:8]
+
+
+def chain_append(path: Path, fields: list[str]) -> str:
+    """Append ' | '-joined fields plus prev=<hash of the previous line>."""
+    lines = path.read_text(encoding="utf-8").splitlines() if path.exists() else []
+    prev = _sha8(lines[-1]) if lines else "00000000"
+    line = " | ".join([*fields, f"prev={prev}"])
+    with path.open("a", encoding="utf-8") as f:
+        f.write(line + "\n")
+    return line
+
+
+def chain_verify(path: Path) -> int | None:
+    """Return the 1-based number of the first line whose prev doesn't match, or None."""
+    if not path.exists():
+        return None
+    lines = path.read_text(encoding="utf-8").splitlines()
+    for i, line in enumerate(lines):
+        expected = _sha8(lines[i - 1]) if i else "00000000"
+        if not line.endswith(f"prev={expected}") and f'"prev": "{expected}"' not in line:
+            return i + 1
+    return None
+
+
+def git_email(root: Path) -> str:
+    code, out = git_out(root, "config", "user.email")
+    return out if code == 0 and out else "unknown"
+
+
+def now_iso() -> str:
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def deny_unless_overridden(root: Path, gate: str, reason: str) -> None:
+    """Deny with the gate ID, unless a fresh one-use override token names this gate."""
+    from datetime import datetime, timezone
+    token = root / ".gantry" / "override-token.json"
+    if token.exists():
+        t = json.loads(token.read_text(encoding="utf-8"))
+        fresh = datetime.fromisoformat(t["expires"]) > datetime.now(timezone.utc)
+        if t.get("gate") == gate and fresh:
+            token.unlink()                                   # one use only
+            chain_append(root / ".gantry" / "overrides.log",
+                         [now_iso(), t.get("by", "unknown"), gate, current_branch(root), "used"])
+            return
+    deny(f"[{gate}] {reason}")
