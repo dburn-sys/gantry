@@ -24,3 +24,5 @@ A blocking review finding can be accepted, rather than fixed, only by a person:
 | `G-FINDINGS` | Commits while a review finding has no disposition, or a CRITICAL or HIGH finding is neither fixed nor accepted by a person | 14, 18 |
 | `G-SUBAGENT` | Subagents committing, pushing, merging, or rebasing | 18 |
 | `G-ARCH` | Commits touching an architecture section without a CONFORMANT review of the current code | 19 |
+| `G-PR` | Opening a PR from main or a spike, with undispositioned findings, or without a full passing run of the current code | 20 |
+| `G-MERGE` | Agents merging, approving, or enabling auto-merge on a pull request | 20 |

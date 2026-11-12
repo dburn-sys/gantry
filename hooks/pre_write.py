@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from _gantry import (approved, current_branch, deny_unless_overridden,  # noqa: E402
+from _gantry import (approved_for_branch, spec_slugs, approved, current_branch, deny_unless_overridden,  # noqa: E402
                      existed_at_branch_point, gantry_root, git_out, is_source,
                      is_test_file, lane_of, read_config, read_input, run_hook, runs_on)
 from _secrets import scan  # noqa: E402
@@ -66,8 +66,8 @@ def check_lane_gates(root: Path, path: Path, config: dict) -> None:
              "`git branch -m <lane>/<name>` (feat, fix, chore, refactor, or spike), "
              "or ask the user which kind of work this is.")
     if lane == "feat":
-        slug = branch.removeprefix("feat/")
-        if not approved(root, slug):
+        slug = spec_slugs(branch)[-1]
+        if not approved_for_branch(root, branch):
             deny_unless_overridden(root, "G-SPEC", f"Gantry: no approved spec for {slug}. Feature code can't be "
                  f"written until .gantry/specs/{slug}.md is approved. Run the "
                  "gantry:brainstorming skill, then ask the user to type "

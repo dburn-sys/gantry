@@ -33,7 +33,7 @@ class _Allowed(Exception):
     """Raised after an override lets a check through, to skip its remaining steps."""
 
 
-def check_findings(root: Path, branch: str) -> None:
+def check_findings(root: Path, branch: str, gate: str = "G-FINDINGS") -> None:
     """G-FINDINGS: every review finding in this branch's run report needs a disposition."""
     runs = sorted((root / ".gantry" / "runs").glob(f"*{branch.replace('/', '-')}*/report.md"))
     if not runs:
@@ -66,12 +66,12 @@ def check_findings(root: Path, branch: str) -> None:
             if not (disposition.startswith("accepted") and n in accepted):
                 unaccepted.append(n)
     if open_rows:
-        deny_unless_overridden(root, "G-FINDINGS",
+        deny_unless_overridden(root, gate,
             f"Gantry: {len(open_rows)} review finding(s) in {runs[-1].parent.name} have no "
             "disposition. Mark each one fixed (with the commit), accepted (with a "
             "reason), or deferred ([NEEDS-TRIAGE] and a ticket).")
     if unaccepted:
-        deny_unless_overridden(root, "G-FINDINGS",
+        deny_unless_overridden(root, gate,
             f"Gantry: blocking finding(s) {', '.join(unaccepted)} in {runs[-1].parent.name} "
             "aren't fixed. A CRITICAL or HIGH finding is either fixed, or accepted by a "
             "person typing: accept finding <n> because <reason>.")
@@ -115,12 +115,12 @@ def check_conformance(root: Path) -> None:
             return
 
 
-def check_evidence(root: Path, test_command: str) -> None:
+def check_evidence(root: Path, test_command: str, gate: str = "G-EVIDENCE") -> None:
     run = latest_run(root)
     how = (f"Run `{test_command}` exactly (no extra file or test arguments, "
-           "no pipes or redirects, not in the background), then commit again.")
+           "no pipes or redirects, not in the background), then try again.")
     def deny(reason: str) -> None:
-        deny_unless_overridden(root, "G-EVIDENCE", reason)
+        deny_unless_overridden(root, gate, reason)
         raise _Allowed
 
     if run is None:
@@ -139,6 +139,51 @@ def check_evidence(root: Path, test_command: str) -> None:
     if run["tree"] != current:
         deny(f"Gantry: files changed after the last passing test run "
              f"({run['at']}). The tests haven't run against this code. {how}")
+
+
+def gh_args(words: list[str]) -> list[str] | None:
+    """If these words run the GitHub CLI, return its arguments."""
+    i = 0
+    while i < len(words) and re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", words[i]):
+        i += 1
+    if i >= len(words) or Path(words[i]).name.lower() not in ("gh", "gh.exe"):
+        return None
+    return words[i + 1:] or None
+
+
+def refuse_merge(root: Path, what: str) -> None:
+    deny_unless_overridden(root, "G-MERGE",
+        f"Gantry: agents don't {what}. A person merges, in GitHub or their own "
+        "terminal, after reading the PR. Tell the user the PR is ready.")
+
+
+def check_pr_create(root: Path) -> None:
+    """G-PR: a PR is opened only for finished, evidenced, fully dispositioned work."""
+    branch = current_branch(root)
+    if branch in PROTECTED or lane_of(branch) == "spike":
+        deny_unless_overridden(root, "G-PR",
+            f"Gantry: no pull requests from {branch}. Spikes never merge, and "
+            "main isn't a feature branch.")
+        return
+    check_findings(root, branch, gate="G-PR")
+    test_command = read_config(root).get("test_command")
+    if test_command:
+        try:
+            check_evidence(root, test_command, gate="G-PR")
+        except _Allowed:
+            pass
+
+
+def check_gh(root: Path, args: list[str]) -> None:
+    joined = " ".join(args)
+    if args[:2] == ["pr", "create"]:
+        check_pr_create(root)
+    elif args[:2] == ["pr", "merge"]:
+        refuse_merge(root, "merge pull requests or enable auto-merge")
+    elif args[:2] == ["pr", "review"] and any(a in ("--approve", "-a") for a in args):
+        refuse_merge(root, "approve pull requests")
+    elif args[:1] == ["api"] and re.search(r"pulls/\d+/(merge|reviews)\b|automerge|enablePullRequestAutoMerge|mergePullRequest", joined):
+        refuse_merge(root, "merge or approve pull requests through the API")
 
 
 def touches_harness(words: list[str]) -> bool:
@@ -215,6 +260,10 @@ def main() -> None:
             deny_unless_overridden(root, "G-HARNESS", "Gantry: .gantry/ holds this repo's harness state and can't "
                  "be removed or moved by the agent. If the user wants to opt "
                  "out of Gantry, they can delete it themselves.")
+        gh = gh_args(words)
+        if gh:
+            check_gh(root, gh)
+            continue
         args = git_args(words)
         if not args:
             continue

@@ -40,6 +40,19 @@
             "command": "python -c \"\" || python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/pre_write.py\""
           }
         ]
+      },
+      {
+        "matcher": "mcp__github__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/pre_mcp.py\""
+          },
+          {
+            "type": "command",
+            "command": "python -c \"\" || python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/pre_mcp.py\""
+          }
+        ]
       }
     ],
     "PostToolUse": [

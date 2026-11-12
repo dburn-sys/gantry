@@ -1,6 +1,7 @@
 """Shared helpers for Gantry hooks. Standard library only."""
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -165,6 +166,18 @@ def approved(root: Path, slug: str) -> bool:
                for line in f.read_text(encoding="utf-8").splitlines() if line.strip())
 
 
+def spec_slugs(branch: str) -> list[str]:
+    """feat/12-csv-export -> ["12-csv-export", "csv-export"]: an issue number rides along."""
+    slug = branch.split("/", 1)[-1]
+    bare = re.sub(r"^\d+-", "", slug)
+    return [slug] if bare == slug else [slug, bare]
+
+
+def approved_for_branch(root: Path, branch: str) -> str | None:
+    """The approved spec slug for this branch, or None."""
+    return next((s for s in spec_slugs(branch) if approved(root, s)), None)
+
+
 LANES = ("feat/", "fix/", "chore/", "spike/", "refactor/")
 
 
@@ -224,7 +237,7 @@ def runs_on(root: Path, branch: str) -> list[dict]:
 
 GATES = {"G-MAIN", "G-FORCE", "G-SECRET", "G-HARNESS", "G-EVIDENCE", "G-SPEC", "G-FIX",
          "G-CHORE", "G-LANE", "G-SPIKE", "G-REFACTOR", "G-MIGRATION", "G-FINDINGS",
-         "G-SUBAGENT", "G-ARCH"}
+         "G-SUBAGENT", "G-ARCH", "G-PR", "G-MERGE"}
 TOKEN_MINUTES = 10
 
 
