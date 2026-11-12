@@ -12,7 +12,8 @@ describe the work in plain English and Gantry routes it.
 | --- | --- |
 | `/gantry:commit [summary]` | Commit through the commit gate |
 | `/gantry:tdd` | Drive a behavior change test-first (Claude also starts this on its own) |
-| `/gantry:init` | Opt this repository into Gantry |
+| `/gantry:init` | Opt this repository into Gantry: scouts the code, asks what it can't tell, proves the tests run |
+| `/gantry:repair` | Bring a repository set up by an older Gantry up to date |
 | `/gantry:feature <name>` | Start a feature: spec, plan, test-first build |
 | `/gantry:fix <name>` | Start a bug fix: failing regression test first |
 | `/gantry:chore <name>` | Start a chore: docs, dependencies, config; no source changes |
