@@ -238,9 +238,46 @@ def push_targets(args: list[str]) -> list[str]:
             for r in refspecs]
 
 
+def effective_dirs(command: str, start: str) -> list[str]:
+    """Every folder this command runs git in. `cd other-repo && git commit` from
+    outside a Gantry repo must be judged by other-repo, not by where the session
+    happens to be (a gap found while building the book's companion repo)."""
+    here = Path(start).expanduser()
+    dirs = [str(here)]
+    for words in simple_commands(command):
+        if words[0] in ("cd", "pushd", "Set-Location", "sl") and len(words) > 1:
+            here = (here / os.path.expanduser(words[1])).resolve()
+            dirs.append(str(here))
+        i = 1 if words and Path(words[0]).name.lower() in ("git", "git.exe") else None
+        while i is not None and i < len(words) - 1 and words[i].startswith("-"):
+            if words[i] == "-C":
+                dirs.append(str((here / os.path.expanduser(words[i + 1])).resolve()))
+                i += 2
+            else:
+                i += 1
+    seen, out = set(), []
+    for d in dirs:
+        if d not in seen and Path(d).is_dir():
+            seen.add(d)
+            out.append(d)
+    return out
+
+
 def main() -> None:
     data = read_input()
     if data.get("tool_name") not in ("Bash", "PowerShell"):
+        return
+    command = (data.get("tool_input") or {}).get("command", "")
+    start = data.get("cwd") or os.getcwd()
+    dirs = effective_dirs(command, start)
+    for d in dirs[1:]:
+        check(dict(data, cwd=d), elsewhere=True)
+    check(data)
+
+
+def check(data: dict, elsewhere: bool = False) -> None:
+    """All the Bash gates, for one folder the command runs in."""
+    if elsewhere and gantry_root(data) is None and uninitialized_repo(data) is None:
         return
     root = gantry_root(data)
     if root is None:

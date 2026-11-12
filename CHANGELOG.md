@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.1 (2026-07-21)
+
+### Fixed
+- A command run from outside a Gantry repository but aimed at one
+  (`cd other-repo && git commit`, `git -C other-repo commit`) was judged by the
+  session's folder, where Gantry was dormant, so it skipped that repo's gates.
+  The Bash hook now checks every folder the command runs git in. Likewise, a
+  Write or Edit to an absolute path is judged by the repository the file is in.
+  Found when a commit in the book's companion repo went through ungated this way.
+
 ## 1.2.0 (2026-07-20)
 
 ### Added

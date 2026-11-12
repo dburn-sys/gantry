@@ -1,7 +1,7 @@
 {
   "name": "gantry",
   "description": "An engineering harness for Claude Code: routes work through gated routines and reviewers.",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "author": {
     "name": "Gantry Book"
   },
