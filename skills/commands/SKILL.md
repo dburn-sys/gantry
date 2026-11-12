@@ -5,7 +5,8 @@ disable-model-invocation: true
 ---
 
 List the Gantry commands below, exactly as written. Do not add
-commands that aren't listed.
+commands that aren't listed. You don't have to type most of them:
+describe the work in plain English and Gantry routes it.
 
 | Command | What it does |
 | --- | --- |
@@ -19,4 +20,6 @@ commands that aren't listed.
 | `/gantry:spike <name>` | Run an experiment that can never merge |
 | `/gantry:adr <name>` | Record a decision as an ADR |
 | `/gantry:audit [range]` | Summarize overrides, approvals, ADRs, and findings |
+| `/gantry:status` | Show the branch, lane, run, spec, last test run, and open questions |
+| `/gantry:btw <question>` | Ask a quick question; nothing starts, nothing changes |
 | `/gantry:commands` | Show this list |

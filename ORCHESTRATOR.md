@@ -29,6 +29,7 @@ Be terse and decisive. State, don't hedge. No praise, no filler.
 | a question about the code | none | answer directly |
 | commit work | any | the `gantry:commit-gate` skill |
 
+When a Gantry routing note appears, use the gantry:intent-routing skill.
 If the lane isn't clear, ask the user which one. Never pick a lighter
 lane to save time.
 

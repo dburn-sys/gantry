@@ -32,6 +32,14 @@ def current_branch(root: Path) -> str:
     return result.stdout.strip()
 
 
+def current_branch_or_none(root: Path) -> str | None:
+    """The current branch, or None outside git or before the first commit."""
+    try:
+        return current_branch(root)
+    except (RuntimeError, OSError, subprocess.SubprocessError):
+        return None
+
+
 def emit(payload: dict) -> None:
     """Print a JSON response and exit successfully."""
     print(json.dumps(payload))

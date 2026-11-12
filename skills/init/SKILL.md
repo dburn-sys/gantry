@@ -16,5 +16,13 @@ disable-model-invocation: true
 
        No open questions. No tasks in flight.
 
-3. Tell the user to commit `.gantry/` and start a new session so the
+3. Create `.gantry/.gitignore` with these lines, which are local
+   records that never belong in git:
+
+       evidence.jsonl
+       unproven.log
+       override-token.json
+       intent-samples.jsonl
+
+4. Tell the user to commit `.gantry/` and start a new session so the
    Gantry hooks pick it up.

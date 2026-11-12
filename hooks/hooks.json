@@ -96,6 +96,14 @@
           {
             "type": "command",
             "command": "python -c \"\" || python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/prompt_submit.py\""
+          },
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/prompt_intent.py\""
+          },
+          {
+            "type": "command",
+            "command": "python -c \"\" || python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/prompt_intent.py\""
           }
         ]
       }
