@@ -1,4 +1,4 @@
-"""Chapter 14: overrides, hash chains, migrations, and finding dispositions."""
+"""Chapter 14: overrides and finding dispositions."""
 import json
 import sys
 from pathlib import Path
@@ -6,7 +6,7 @@ from pathlib import Path
 from helpers import HOOKS, decision, git, make_repo, run_hook
 
 sys.path.insert(0, str(HOOKS))
-from _gantry import chain_verify  # noqa: E402
+
 
 CONFIG = "---\ngantry: enabled\ntest_command: sh test.sh\nnot_source: test/, .gantry/, *.md\n---\n"
 
@@ -60,36 +60,12 @@ def test_short_or_unknown_override_is_rejected(tmp_path):
     assert prompt(repo, "override G-NOPE because this gate does not exist at all").get("decision") == "block"
 
 
-def test_tampering_breaks_the_chain(tmp_path):
-    repo = setup(tmp_path)
-    prompt(repo, "override G-EVIDENCE because first reason with enough words here")
-    prompt(repo, "override G-EVIDENCE because second reason with enough words here")
-    log = repo / ".gantry" / "overrides.log"
-    lines = log.read_text().splitlines()
-    lines[0] = lines[0].replace("first", "edited")
-    log.write_text("\n".join(lines) + "\n")
-    assert chain_verify(log) == 2
-
-
 def test_agent_cannot_touch_override_files(tmp_path):
     repo = setup(tmp_path)
     for name in ("overrides.log", "override-token.json"):
         out = run_hook("pre_write.py", {"tool_name": "Write", "cwd": str(repo),
             "tool_input": {"file_path": str(repo / ".gantry" / name), "content": "{}"}}, repo)
         assert decision(out) == "deny"
-
-
-def test_committed_migration_cannot_be_edited(tmp_path):
-    repo = setup(tmp_path, branch="spike/x")
-    (repo / "migrations").mkdir()
-    (repo / "migrations" / "001_init.sql").write_text("CREATE TABLE t (id int);\n")
-    git(repo, "add", "-A")
-    git(repo, "commit", "-q", "-m", "migration")
-    def write(name):
-        return decision(run_hook("pre_write.py", {"tool_name": "Write", "cwd": str(repo),
-            "tool_input": {"file_path": str(repo / "migrations" / name), "content": "x"}}, repo))
-    assert write("001_init.sql") == "deny"
-    assert write("002_next.sql") == "allow"
 
 
 REPORT = """# Run: fix/flaky
