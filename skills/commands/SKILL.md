@@ -12,4 +12,9 @@ commands that aren't listed.
 | `/gantry:commit [summary]` | Commit through the commit gate |
 | `/gantry:tdd` | Drive a behavior change test-first (Claude also starts this on its own) |
 | `/gantry:init` | Opt this repository into Gantry |
+| `/gantry:feature <name>` | Start a feature: spec, plan, test-first build |
+| `/gantry:fix <name>` | Start a bug fix: failing regression test first |
+| `/gantry:chore <name>` | Start a chore: docs, dependencies, config; no source changes |
+| `/gantry:refactor <name>` | Restructure with no behavior change |
+| `/gantry:spike <name>` | Run an experiment that can never merge |
 | `/gantry:commands` | Show this list |

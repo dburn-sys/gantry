@@ -6,8 +6,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from _gantry import (current_branch, deny, gantry_root, latest_run, read_config,  # noqa: E402
-                     read_input, run_hook, tree_fingerprint)
+from _gantry import (current_branch, deny, gantry_root, lane_of, latest_run,  # noqa: E402
+                     read_config, read_input, run_hook, tree_fingerprint)
 from _secrets import scan  # noqa: E402
 
 PROTECTED = {"main", "master"}
@@ -141,13 +141,26 @@ def main() -> None:
                 deny(f"Gantry: pushing to {', '.join(sorted(hit))} is "
                      "refused. Push your branch and open a pull request.")
 
+        if sub in ("merge", "rebase", "cherry-pick") and \
+                any(a.startswith("spike/") for a in args[1:]):
+            deny("Gantry: spike branches can't be merged. Write up what you "
+                 "learned in .gantry/spikes/<slug>.md, then start the real work "
+                 "with /gantry:feature.")
+
+        if sub == "branch" and any(a in ("-m", "-M", "--move") for a in args[1:]):
+            names = [a for a in args[1:] if not a.startswith("-")]
+            old, new = (names if len(names) == 2 else [current_branch(root), *names[-1:]])[:2]
+            if lane_of(old) != lane_of(new):
+                deny("Gantry: renaming a branch into a different lane changes "
+                     "which gates apply. Ask the user; they can rename it.")
+
         if sub == "commit":
             if current_branch(root) in PROTECTED:
                 deny("Gantry: commits on main or master are refused. Create a "
                      "branch with `git switch -c <type>/<short-name>`, then "
                      "commit through the gantry:commit-gate skill.")
             test_command = read_config(root).get("test_command")
-            if test_command:
+            if test_command and lane_of(current_branch(root)) != "spike":
                 check_evidence(root, test_command)
 
 

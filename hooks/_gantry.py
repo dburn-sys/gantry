@@ -130,3 +130,58 @@ def approved(root: Path, slug: str) -> bool:
         return False
     return any(json.loads(line).get("spec") == slug
                for line in f.read_text(encoding="utf-8").splitlines() if line.strip())
+
+
+LANES = ("feat/", "fix/", "chore/", "spike/", "refactor/")
+
+
+def lane_of(branch: str) -> str | None:
+    return next((p.rstrip("/") for p in LANES if branch.startswith(p)), None)
+
+
+def _matches(rel: str, pattern: str) -> bool:
+    import fnmatch
+    pattern = pattern.strip()
+    if not pattern:
+        return False
+    if pattern.endswith("/"):
+        return rel.startswith(pattern) or ("/" + pattern) in ("/" + rel)
+    return fnmatch.fnmatch(rel, pattern) or fnmatch.fnmatch(Path(rel).name, pattern)
+
+
+def is_source(path: Path, root: Path, config: dict) -> bool:
+    """Deny by default: everything is source unless not_source says otherwise."""
+    try:
+        rel = path.resolve().relative_to(root.resolve()).as_posix()
+    except ValueError:
+        return False                       # outside the repo
+    if "not_source" in config:
+        return not any(_matches(rel, p) for p in config["not_source"].split(","))
+    dirs = [d.strip().rstrip("/") + "/" for d in config.get("source_dirs", "src").split(",")]
+    return any(rel.startswith(d) for d in dirs)
+
+
+def is_test_file(path: Path, root: Path) -> bool:
+    rel = path.resolve().relative_to(root.resolve()).as_posix()
+    name = Path(rel).name
+    return (rel.startswith(("test/", "tests/")) or ".test." in name or ".spec." in name
+            or name.startswith("test_") or name.endswith("_test.py"))
+
+
+def git_out(root: Path, *args: str) -> tuple[int, str]:
+    r = subprocess.run(["git", *args], cwd=root, capture_output=True, text=True, timeout=10)
+    return r.returncode, r.stdout.strip()
+
+
+def existed_at_branch_point(root: Path, path: Path) -> bool:
+    code, base = git_out(root, "merge-base", "HEAD", "main")
+    if code != 0:
+        code, base = git_out(root, "merge-base", "HEAD", "master")
+    if code != 0:
+        raise RuntimeError("no merge-base with main or master")
+    rel = path.resolve().relative_to(root.resolve()).as_posix()
+    return git_out(root, "cat-file", "-e", f"{base}:{rel}")[0] == 0
+
+
+def runs_on(root: Path, branch: str) -> list[dict]:
+    return [r for r in ledger_records(root) if r.get("branch") == branch]

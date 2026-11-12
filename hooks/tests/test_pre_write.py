@@ -1,4 +1,4 @@
-from helpers import decision, make_repo, run_hook
+from helpers import decision, git, make_repo, run_hook
 
 KEY = "k8f2Qz9LmV3xT7pW1sD4hJ6nB0cR5yUe"
 
@@ -31,6 +31,7 @@ def test_allowlist_file_protected(tmp_path):
 
 def test_allowlisted_preview_passes(tmp_path):
     repo = make_repo(tmp_path)
+    git(repo, "switch", "-q", "-c", "spike/x")   # a lane where source writes are open
     (repo / ".gantry" / "secrets-allow.txt").write_text(KEY[:4] + "***\n")
     assert write(repo, "src/x.ts", f'const apiKey = "{KEY}";') == "allow"
 

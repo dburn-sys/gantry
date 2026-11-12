@@ -19,13 +19,18 @@ Be terse and decisive. State, don't hedge. No praise, no filler.
   change code, tests, or config to get around it.
 
 ## Routing
-| The user wants to... | Route to |
-| --- | --- |
-| a new feature or significant behavior change | `gantry:brainstorming`, then `gantry:writing-plans`, then `gantry:tdd` for each task |
-| a smaller behavior change (bug fix, validation, endpoint) | the `gantry:tdd` skill |
-| commit work | the `gantry:commit-gate` skill |
-| ask a question about the code | answer directly; no skill |
-| anything else | ask which of the above it is |
+| The user wants to... | Lane | Start with |
+| --- | --- | --- |
+| new behavior or a significant change | feature | /gantry:feature flow |
+| something broken to work correctly | fix | /gantry:fix flow |
+| docs, dependencies, config, CI, or a revert | chore | /gantry:chore flow |
+| restructure code without changing behavior | refactor | /gantry:refactor flow |
+| find out whether something will work | spike | /gantry:spike flow |
+| a question about the code | none | answer directly |
+| commit work | any | the `gantry:commit-gate` skill |
+
+If the lane isn't clear, ask the user which one. Never pick a lighter
+lane to save time.
 
 ## Terminology
 The user invokes a command. The orchestrator routes to a routine. A

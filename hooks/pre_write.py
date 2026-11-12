@@ -4,8 +4,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from _gantry import (approved, current_branch, deny, gantry_root, read_config,  # noqa: E402
-                     read_input, run_hook)
+from _gantry import (approved, current_branch, deny, existed_at_branch_point,  # noqa: E402
+                     gantry_root, is_source, is_test_file, lane_of, read_config,
+                     read_input, run_hook, runs_on)
 from _secrets import scan  # noqa: E402
 
 
@@ -40,19 +41,41 @@ def changes_status_line(path: Path, tool: str, inp: dict) -> bool:
                for l in inp.get("content", "").splitlines())
 
 
-def check_spec_gate(root: Path, path: Path, config: dict) -> None:
-    source_dirs = [(root / d.strip()).resolve() for d in config.get("source_dirs", "src").split(",")]
-    if not any(d in path.parents for d in source_dirs):
-        return                                  # tests, docs, config: not gated
+def check_lane_gates(root: Path, path: Path, config: dict) -> None:
+    """Chapters 12 and 13: what each lane needs before source can change."""
+    source = is_source(path, root, config)
     branch = current_branch(root)
-    if not branch.startswith("feat/"):
-        return                                  # Chapter 13 handles other lanes
-    slug = branch.removeprefix("feat/")
-    if not approved(root, slug):
-        deny(f"Gantry: no approved spec for {slug}. Feature code can't be "
-             f"written until .gantry/specs/{slug}.md is approved. Run the "
-             "gantry:brainstorming skill, then ask the user to type "
-             f"`approve spec {slug}`.")
+    lane = lane_of(branch)
+    if lane == "refactor" and is_test_file(path, root) and path.exists() \
+            and existed_at_branch_point(root, path):
+        deny("Gantry: refactor lane. Existing tests are frozen here, because "
+             "passing them unchanged is the proof that behavior didn't change. "
+             "If a test must change, this is a fix or a feature.")
+    if not source:
+        return                                  # tests, docs, config: not gated
+    if lane is None:
+        deny(f"Gantry: branch {branch} has no lane. Rename it with "
+             "`git branch -m <lane>/<name>` (feat, fix, chore, refactor, or spike), "
+             "or ask the user which kind of work this is.")
+    if lane == "feat":
+        slug = branch.removeprefix("feat/")
+        if not approved(root, slug):
+            deny(f"Gantry: no approved spec for {slug}. Feature code can't be "
+                 f"written until .gantry/specs/{slug}.md is approved. Run the "
+                 "gantry:brainstorming skill, then ask the user to type "
+                 f"`approve spec {slug}`.")
+    if lane == "fix" and not any(not r["passed"] for r in runs_on(root, branch)):
+        deny("Gantry: fix lane. Write a test that reproduces the bug and run it "
+             "so it fails, before changing source. The failing run is the proof "
+             "the bug exists; the later passing run is the proof the fix works.")
+    if lane == "chore":
+        deny("Gantry: chore lane. Chores don't change source code. This change "
+             "touches source, so it's a fix or a feature. Tell the user, and "
+             "suggest /gantry:fix or /gantry:feature.")
+    if lane == "refactor" and not any(r["passed"] and r["scope"] == "full"
+                                      for r in runs_on(root, branch)):
+        deny("Gantry: refactor lane. Run the full suite first so there's a "
+             "green baseline to compare against.")
 
 
 def load_allowlist(root: Path) -> set[str]:
@@ -82,7 +105,7 @@ def main() -> None:
         deny("Gantry: a spec's Status line is written only when the user types "
              "the approval phrase. Leave it as it is.")
 
-    check_spec_gate(root, path, read_config(root))
+    check_lane_gates(root, path, read_config(root))
 
     allowed = load_allowlist(root)
     findings = [f for f in scan(new_text(tool, inp)) if f.preview not in allowed]
