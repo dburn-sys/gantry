@@ -38,6 +38,28 @@ def sprint_state(root: Path) -> str:
     return line + " Resume with the gantry:sprint skill.\n\n"
 
 
+def version_note(root: Path, plugin: Path) -> str:
+    """Chapter 24: say once per session when this repo was set up with an older Gantry."""
+    import json
+    try:
+        installed = json.loads((plugin / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))["version"]
+    except (OSError, ValueError, KeyError):
+        return ""
+    ctx = root / ".gantry" / "context.md"
+    m = re.search(r"^gantry_version:\s*(\S+)", ctx.read_text(encoding="utf-8"), re.M) if ctx.exists() else None
+    have = m.group(1) if m else None
+
+    def key(v: str) -> tuple:
+        return tuple(int(p) for p in re.findall(r"\d+", v)[:3])
+    if have is None:
+        return (f"Gantry upgrade: this repository doesn't record which Gantry version set it up; "
+                f"{installed} is installed. Suggest the user runs /gantry:repair.\n\n")
+    if key(have) < key(installed):
+        return (f"Gantry upgrade: this repository was set up with Gantry {have}; {installed} is "
+                f"installed. Suggest the user runs /gantry:repair.\n\n")
+    return ""
+
+
 def health_note(root: Path) -> str:
     """Chapter 22: say so when nobody has proved the hooks fire here recently."""
     import json
@@ -76,7 +98,7 @@ def main() -> None:
 
     note = ("\n\nNote: git has no user.email set here, so overrides will be "
             "recorded as 'unknown'. Ask the user to set it.") if git_email(root) == "unknown" else ""
-    text = (f"Gantry is active in this repository ({root.name}).{note}\n\n{health_note(root)}{sprint_state(root)}"
+    text = (f"Gantry is active in this repository ({root.name}).{note}\n\n{version_note(root, plugin)}{health_note(root)}{sprint_state(root)}"
             f"{persona}\n\n## Current project state\n\n{state}")
     emit({"hookSpecificOutput": {
         "hookEventName": "SessionStart",

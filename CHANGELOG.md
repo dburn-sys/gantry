@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.2.0 (2026-07-20)
+
+### Added
+- Warn-only mode: gates listed in `GANTRY_GATES_WARN` (or `*` for all) allow the
+  action, say what they would have refused, and record a `would_deny` metric.
+  For introducing gates in waves (docs/rollout/checklist.md).
+- `/gantry:init` rewritten: three read-only scout agents, a synthesized
+  `.gantry/context.md` and CLAUDE.md section, [CONFIRM] questions, a test run
+  that must pass, and the doctor. Never writes architecture files.
+- `templates/CLAUDE.md`: the repo contract every opted-in repo shares.
+- `gantry_version` in `.gantry/context.md`, a session-start note when the
+  installed Gantry is newer, and `/gantry:repair` to catch up.
+- docs/rollout/: the rollout checklist with the waves as `GANTRY_GATES_WARN`
+  values, security and legal answers, and a monthly metrics pack template.
+
 ## 1.1.0 (2026-07-08)
 
 ### Added

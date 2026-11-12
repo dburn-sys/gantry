@@ -111,6 +111,16 @@ def warn_and_allow(check: str, exc: BaseException) -> None:
           f"allowed without checking."})
 
 
+WOULD_DENY: list[str] = []      # Chapter 24: refusals a gate in warn mode didn't make
+
+
+def warn_gates() -> set[str]:
+    """Gates in warn-only mode, from GANTRY_GATES_WARN (managed settings env): a
+    comma list of gate IDs, or * for every gate."""
+    raw = os.environ.get("GANTRY_GATES_WARN", "")
+    return {g.strip().upper() for g in raw.split(",") if g.strip()}
+
+
 def run_hook(check: str, main) -> None:
     """Run a hook's main(), turning any unexpected error into a warning."""
     try:
@@ -119,6 +129,9 @@ def run_hook(check: str, main) -> None:
         raise
     except Exception as exc:  # noqa: BLE001 - fail open on purpose
         warn_and_allow(check, exc)
+    if WOULD_DENY:
+        emit({"systemMessage": "Gantry would have refused this (warn-only mode, so it's "
+              "allowed): " + " | ".join(WOULD_DENY)})
     sys.exit(0)
 
 
@@ -318,6 +331,11 @@ def deny_unless_overridden(root: Path, gate: str, reason: str) -> None:
                          [now_iso(), t.get("by", "unknown"), gate, current_branch(root), "used"])
             record_metric(root, {"gate": gate, "decision": "override"})
             return
+    warn = warn_gates()
+    if gate in warn or "*" in warn:
+        record_metric(root, {"gate": gate, "decision": "would_deny"})
+        WOULD_DENY.append(f"[{gate}] {reason}")
+        return
     record_metric(root, {"gate": gate, "decision": "deny"})
     deny(f"[{gate}] {reason}")
 
