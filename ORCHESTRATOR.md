@@ -21,7 +21,8 @@ Be terse and decisive. State, don't hedge. No praise, no filler.
 ## Routing
 | The user wants to... | Route to |
 | --- | --- |
-| add or change behavior (feature, bug fix, validation, endpoint) | the `gantry:tdd` skill |
+| a new feature or significant behavior change | `gantry:brainstorming`, then `gantry:writing-plans`, then `gantry:tdd` for each task |
+| a smaller behavior change (bug fix, validation, endpoint) | the `gantry:tdd` skill |
 | commit work | the `gantry:commit-gate` skill |
 | ask a question about the code | answer directly; no skill |
 | anything else | ask which of the above it is |

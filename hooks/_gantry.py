@@ -122,3 +122,11 @@ def has_uncommitted_changes(root: Path) -> bool:
     if r.returncode != 0:
         raise RuntimeError(r.stderr.strip())
     return bool(r.stdout.strip())
+
+
+def approved(root: Path, slug: str) -> bool:
+    f = root / ".gantry" / "approvals.jsonl"
+    if not f.exists():
+        return False
+    return any(json.loads(line).get("spec") == slug
+               for line in f.read_text(encoding="utf-8").splitlines() if line.strip())
