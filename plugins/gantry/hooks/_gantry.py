@@ -50,6 +50,30 @@ def gantry_root(data: dict) -> Path | None:
     return None
 
 
+def uninitialized_repo(data: dict) -> Path | None:
+    """Chapter 23 (ADR-0010): with GANTRY_REQUIRED=1 from managed settings, a git
+    repository with no .gantry/ is uninitialized, not dormant. Returns its top
+    folder, or None (not required, not a git repo, or already initialized)."""
+    if os.environ.get("GANTRY_REQUIRED") != "1" or gantry_root(data) is not None:
+        return None
+    cwd = data.get("cwd")
+    start = cwd if cwd and in_other_worktree(cwd) else (
+        os.environ.get("CLAUDE_PROJECT_DIR") or cwd or ".")
+    top = _toplevel(str(start)) if Path(str(start)).is_dir() else None
+    return Path(top) if top else None
+
+
+def state_dir(root: Path) -> Path:
+    """Where override tokens, override logs, and metrics live: .gantry/ once a repo
+    is initialized; before that (G-INIT), a private folder inside .git/."""
+    g = root / ".gantry"
+    if g.is_dir():
+        return g
+    d = root / ".git" / "gantry"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
 def current_branch(root: Path) -> str:
     result = subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"],
                             cwd=root, capture_output=True, text=True, timeout=5)
@@ -237,7 +261,10 @@ def runs_on(root: Path, branch: str) -> list[dict]:
 
 GATES = {"G-MAIN", "G-FORCE", "G-SECRET", "G-HARNESS", "G-EVIDENCE", "G-SPEC", "G-FIX",
          "G-CHORE", "G-LANE", "G-SPIKE", "G-REFACTOR", "G-MIGRATION", "G-FINDINGS",
-         "G-SUBAGENT", "G-ARCH", "G-PR", "G-MERGE"}
+         "G-SUBAGENT", "G-ARCH", "G-PR", "G-MERGE", "G-INIT"}
+
+INIT_REASON = ("Gantry is required in this organization, and this repository isn't set "
+               "up yet. Run /gantry:init (it takes a minute), or ask the user to.")
 TOKEN_MINUTES = 10
 
 
@@ -281,13 +308,13 @@ def now_iso() -> str:
 def deny_unless_overridden(root: Path, gate: str, reason: str) -> None:
     """Deny with the gate ID, unless a fresh one-use override token names this gate."""
     from datetime import datetime, timezone
-    token = root / ".gantry" / "override-token.json"
+    token = state_dir(root) / "override-token.json"
     if token.exists():
         t = json.loads(token.read_text(encoding="utf-8"))
         fresh = datetime.fromisoformat(t["expires"]) > datetime.now(timezone.utc)
         if t.get("gate") == gate and fresh:
             token.unlink()                                   # one use only
-            chain_append(root / ".gantry" / "overrides.log",
+            chain_append(state_dir(root) / "overrides.log",
                          [now_iso(), t.get("by", "unknown"), gate, current_branch(root), "used"])
             record_metric(root, {"gate": gate, "decision": "override"})
             return
@@ -298,7 +325,7 @@ def deny_unless_overridden(root: Path, gate: str, reason: str) -> None:
 def record_metric(root: Path, event: dict) -> None:
     """Chapter 22: one local line per gate decision, for /gantry:stats. Never fails a hook."""
     try:
-        with (root / ".gantry" / "metrics.jsonl").open("a", encoding="utf-8") as f:
+        with (state_dir(root) / "metrics.jsonl").open("a", encoding="utf-8") as f:
             f.write(json.dumps({"at": now_iso(), **event}) + "\n")
     except OSError:
         pass

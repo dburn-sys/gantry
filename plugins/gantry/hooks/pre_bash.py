@@ -12,7 +12,7 @@ from _gantry import (current_branch, deny_unless_overridden, gantry_root,  # noq
                      lane_of, latest_run, read_config, read_input, run_hook,
                      tree_fingerprint)
 from _secrets import scan  # noqa: E402
-from _gantry import now_iso, SECTION_FILES, latest_verdicts, sections_touched  # noqa: E402
+from _gantry import INIT_REASON, now_iso, uninitialized_repo, SECTION_FILES, latest_verdicts, sections_touched  # noqa: E402
 
 PROTECTED = {"main", "master"}
 GIT_OPTS_WITH_VALUE = {"-c", "-C", "--git-dir", "--work-tree", "--namespace"}
@@ -244,6 +244,13 @@ def main() -> None:
         return
     root = gantry_root(data)
     if root is None:
+        bare = uninitialized_repo(data)     # required mode (ADR-0010)
+        if bare is not None:
+            command = (data.get("tool_input") or {}).get("command", "")
+            for words in simple_commands(command):
+                args = git_args(words)
+                if args and args[0] in ("commit", "push"):
+                    deny_unless_overridden(bare, "G-INIT", INIT_REASON)
         return                      # principle 7: dormant until invited
     command = (data.get("tool_input") or {}).get("command", "")
 

@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from _gantry import (GATES, TOKEN_MINUTES, _sha8, chain_append, current_branch,  # noqa: E402
+from _gantry import (state_dir, uninitialized_repo, GATES, TOKEN_MINUTES, _sha8, chain_append, current_branch,  # noqa: E402
                      emit, gantry_root, git_email, now_iso, read_input, run_hook)
 
 APPROVE = re.compile(r"^\s*approve spec ([a-z0-9][a-z0-9-]*)\s*$", re.I)
@@ -68,10 +68,10 @@ def handle_override(root: Path, gate: str, reason: str) -> None:
               "reason": "Gantry: an override needs a real reason of at least five words."})
     who = git_email(root)
     reason_one_line = " ".join(reason.split())
-    chain_append(root / ".gantry" / "overrides.log",
+    chain_append(state_dir(root) / "overrides.log",
                  [now_iso(), who, gate, current_branch(root), reason_one_line])
     expires = (datetime.now(timezone.utc) + timedelta(minutes=TOKEN_MINUTES)).isoformat()
-    (root / ".gantry" / "override-token.json").write_text(
+    (state_dir(root) / "override-token.json").write_text(
         json.dumps({"gate": gate, "by": who, "expires": expires}), encoding="utf-8")
     emit({"hookSpecificOutput": {"hookEventName": "UserPromptSubmit",
           "additionalContext": f"Gantry recorded an override of {gate} by {who}. "
@@ -83,6 +83,10 @@ def main() -> None:
     data = read_input()
     root = gantry_root(data)
     if root is None:
+        bare = uninitialized_repo(data)       # required mode: only a G-INIT override applies
+        o = OVERRIDE.match(data.get("prompt", ""))
+        if bare is not None and o and o.group(1).upper() == "G-INIT":
+            handle_override(bare, o.group(1), o.group(2))
         return
     o = OVERRIDE.match(data.get("prompt", ""))
     if o:

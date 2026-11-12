@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from _gantry import (dev_mode, approved_for_branch, spec_slugs, approved, current_branch, deny_unless_overridden,  # noqa: E402
+from _gantry import (INIT_REASON, uninitialized_repo, dev_mode, approved_for_branch, spec_slugs, approved, current_branch, deny_unless_overridden,  # noqa: E402
                      existed_at_branch_point, gantry_root, git_out, is_source,
                      is_test_file, lane_of, read_config, read_input, run_hook, runs_on)
 from _secrets import scan  # noqa: E402
@@ -112,6 +112,12 @@ def main() -> None:
         return
     root = gantry_root(data)
     if root is None:
+        bare = uninitialized_repo(data)
+        target = Path((data.get("tool_input") or {}).get("file_path", ""))
+        if bare is not None:
+            target = (bare / target).resolve()
+            if bare in target.parents and (bare / ".gantry") not in [target, *target.parents]:
+                deny_unless_overridden(bare, "G-INIT", INIT_REASON)
         return
     inp = data.get("tool_input") or {}
     path = (root / inp.get("file_path", "")).resolve()

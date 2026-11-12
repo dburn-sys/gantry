@@ -1,0 +1,73 @@
+# ADR-0012: on PRs that didn't go through Gantry, run the security and
+# auth-crypto reviewers in CI. Needs secrets.ANTHROPIC_API_KEY and read access
+# to brightwater/claude-plugins (secrets.PLUGINS_TOKEN).
+name: ci-reviewers
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  gantry-check:
+    runs-on: ubuntu-24.04
+    outputs:
+      no_gantry_run: ${{ steps.check.outputs.no_gantry_run }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          repository: brightwater/claude-plugins
+          token: ${{ secrets.PLUGINS_TOKEN }}
+          path: .claude-plugins
+      - id: check
+        run: python .claude-plugins/ci/gantry_check.py --branch "$GITHUB_HEAD_REF" --base "origin/$GITHUB_BASE_REF"
+      - if: steps.check.outputs.no_gantry_run == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: gh pr edit "$PR" --add-label no-gantry-run
+
+  reviewers:
+    needs: gantry-check
+    if: needs.gantry-check.outputs.no_gantry_run == 'true'
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        reviewer: [security-reviewer, auth-crypto-reviewer]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          repository: brightwater/claude-plugins
+          token: ${{ secrets.PLUGINS_TOKEN }}
+          path: .claude-plugins
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install -g @anthropic-ai/claude-code
+      - name: Review
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          REVIEWER: ${{ matrix.reviewer }}
+          BASE: origin/${{ github.base_ref }}
+        run: |
+          git diff "$BASE...HEAD" > pr.diff
+          claude -p "Use the gantry:$REVIEWER agent to review the change in pr.diff. Return its output exactly." \
+            --plugin-dir .claude-plugins/plugins/gantry --add-dir .claude-plugins/plugins/gantry \
+            --allowedTools Read Grep Glob > review.md
+          {
+            echo "### $REVIEWER (no-gantry-run PR)"
+            cat review.md
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REVIEWER: ${{ matrix.reviewer }}
+        run: gh pr comment "$PR" --body-file review.md

@@ -1,0 +1,28 @@
+{
+  "extraKnownMarketplaces": {
+    "brightwater-tools": {
+      "source": { "source": "github", "repo": "brightwater/claude-plugins" },
+      "autoUpdate": true
+    }
+  },
+  "enabledPlugins": {
+    "gantry@brightwater-tools": true
+  },
+  "strictKnownMarketplaces": [
+    { "source": "github", "repo": "brightwater/*" },
+    { "source": "github", "repo": "anthropics/claude-plugins-official" }
+  ],
+  "disableSideloadFlags": true,
+  "allowManagedHooksOnly": true,
+  "permissions": {
+    "deny": [
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Read(./.env)",
+      "Read(./.env.*)"
+    ]
+  },
+  "env": {
+    "GANTRY_REQUIRED": "1"
+  }
+}

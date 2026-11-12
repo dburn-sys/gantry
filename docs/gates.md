@@ -26,3 +26,4 @@ A blocking review finding can be accepted, rather than fixed, only by a person:
 | `G-ARCH` | Commits touching an architecture section without a CONFORMANT review of the current code | 19 |
 | `G-PR` | Opening a PR from main or a spike, with undispositioned findings, or without a full passing run of the current code | 20 |
 | `G-MERGE` | Agents merging, approving, or enabling auto-merge on a pull request | 20 |
+| `G-INIT` | In required mode (`GANTRY_REQUIRED=1`), source writes and commits in a repo without `.gantry/` | 23 |

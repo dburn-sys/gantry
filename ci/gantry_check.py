@@ -10,6 +10,12 @@ Exits 1 and lists every problem found. Checks:
   2. A feat/ branch has an approved spec.
   3. Every finding in a committed run report has a disposition, and every CRITICAL
      or HIGH finding is fixed or accepted by a person (accepted-findings.log).
+
+With --base <ref> (the PR's base branch), it also reports whether the PR went
+through Gantry at all: a PR that adds or changes no .gantry/runs/*/report.md is
+"no-gantry-run". That isn't a failure (people may write code by hand); it is
+written to $GITHUB_OUTPUT as no_gantry_run=true so the workflow can label the
+PR and send it to the CI reviewers (Chapter 23, ADR-0012).
 """
 import argparse
 import os
@@ -66,9 +72,19 @@ def report_problems(root: Path) -> list[str]:
     return problems
 
 
+def went_through_gantry(root: Path, base: str) -> bool:
+    import subprocess
+    r = subprocess.run(["git", "diff", "--name-only", f"{base}...HEAD"], cwd=root,
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        raise RuntimeError(r.stderr.strip() or f"can't diff against {base}")
+    return any(re.match(r"^\.gantry/runs/[^/]+/report\.md$", p) for p in r.stdout.splitlines())
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", default=".")
+    ap.add_argument("--base", help="PR base ref, e.g. origin/main, to detect a PR with no Gantry run")
     ap.add_argument("--branch", default=os.environ.get("GITHUB_HEAD_REF")
                     or os.environ.get("GITHUB_REF_NAME") or "")
     a = ap.parse_args(argv)
@@ -84,6 +100,13 @@ def main(argv: list[str] | None = None) -> int:
     if a.branch.startswith("feat/") and not approved_for_branch(root, a.branch):
         problems.append(f"{a.branch}: no approved spec ({' or '.join(spec_slugs(a.branch))})")
     problems += report_problems(root)
+    if a.base:
+        gantry_run = went_through_gantry(root, a.base)
+        print(f"gantry-check: {'run report found' if gantry_run else 'no-gantry-run: no run report in this PR'}")
+        out = os.environ.get("GITHUB_OUTPUT")
+        if out:
+            with open(out, "a", encoding="utf-8") as f:
+                f.write(f"no_gantry_run={'false' if gantry_run else 'true'}\n")
     for p in problems:
         print(f"gantry-check: {p}")
     print(f"gantry-check: {'FAILED' if problems else 'ok'} ({len(problems)} problem(s))")

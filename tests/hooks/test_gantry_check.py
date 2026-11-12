@@ -63,3 +63,28 @@ def test_findings_need_dispositions_and_blocking_ones_a_person(tmp_path):
 def test_repo_without_gantry_is_skipped(tmp_path):
     repo = make_repo(tmp_path, opted_in=False)
     assert check(repo)[0] == 0
+
+
+def test_pr_without_a_run_report_is_labeled_not_failed(tmp_path):
+    from helpers import git
+    repo = repo_with_spec(tmp_path)
+    git(repo, "add", "-A")
+    git(repo, "-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-q", "-m", "base")
+    git(repo, "switch", "-q", "-c", "fix/typo")
+    (repo / "README.md").write_text("hand-written fix\n")
+    git(repo, "add", "-A")
+    git(repo, "-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-q", "-m", "by hand")
+    out_file = tmp_path / "gh_output"
+    r = subprocess.run([sys.executable, str(CHECK), "--root", str(repo), "--branch", "fix/typo", "--base", "main"],
+                       capture_output=True, text=True, env={**__import__("os").environ, "GITHUB_OUTPUT": str(out_file)})
+    assert r.returncode == 0 and "no-gantry-run" in r.stdout
+    assert out_file.read_text().strip() == "no_gantry_run=true"
+    run = repo / ".gantry" / "runs" / "2026-07-02-fix-typo"
+    run.mkdir(parents=True)
+    (run / "report.md").write_text("# Run\n")
+    git(repo, "add", "-A")
+    git(repo, "-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-q", "-m", "through gantry")
+    out_file.unlink()
+    r = subprocess.run([sys.executable, str(CHECK), "--root", str(repo), "--branch", "fix/typo", "--base", "main"],
+                       capture_output=True, text=True, env={**__import__("os").environ, "GITHUB_OUTPUT": str(out_file)})
+    assert r.returncode == 0 and out_file.read_text().strip() == "no_gantry_run=false"

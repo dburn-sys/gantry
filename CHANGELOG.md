@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.1.0 (2026-07-08)
+
+### Added
+- Required mode (ADR-0010 in examples/brightwater): with `GANTRY_REQUIRED=1`
+  (set through managed settings), a git repository without `.gantry/` is
+  uninitialized, not dormant. Source writes and commits are refused with
+  `[G-INIT]` until `/gantry:init` runs. Overridable; before init, override
+  records live in `.git/gantry/`. Without the variable nothing changes.
+- `gantry-check --base <ref>` reports a PR with no run report as
+  `no-gantry-run` (written to `$GITHUB_OUTPUT`). It never fails a PR for it.
+- `examples/brightwater/`: a managed policy, branch ruleset, CODEOWNERS, a CI
+  reviewers workflow for `no-gantry-run` PRs, three ADRs, and what was tested.
+
+### Gates
+- `G-INIT`: in required mode, refuses source writes and commits in a repository
+  without `.gantry/`. Override: `override G-INIT because <reason>`.
+
 ## 1.0.0 (2026-07-01)
 
 The first release from the marketplace layout. Gantry is installed with
