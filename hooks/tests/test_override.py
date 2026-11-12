@@ -6,6 +6,7 @@ from pathlib import Path
 from helpers import HOOKS, decision, git, make_repo, run_hook
 
 sys.path.insert(0, str(HOOKS))
+from _gantry import chain_verify  # noqa: E402
 
 
 CONFIG = "---\ngantry: enabled\ntest_command: sh test.sh\nnot_source: test/, .gantry/, *.md\n---\n"
