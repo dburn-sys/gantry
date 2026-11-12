@@ -1,0 +1,138 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/_launcher.py\" session_start"
+          },
+          {
+            "type": "command",
+            "command": "python -c \"\" || python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/_launcher.py\" session_start"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/_launcher.py\" pre_bash"
+          },
+          {
+            "type": "command",
+            "command": "python -c \"\" || python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/_launcher.py\" pre_bash"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/_launcher.py\" pre_write"
+          },
+          {
+            "type": "command",
+            "command": "python -c \"\" || python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/_launcher.py\" pre_write"
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__github__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/_launcher.py\" pre_mcp"
+          },
+          {
+            "type": "command",
+            "command": "python -c \"\" || python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/_launcher.py\" pre_mcp"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/_launcher.py\" post_bash"
+          },
+          {
+            "type": "command",
+            "command": "python -c \"\" || python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/_launcher.py\" post_bash"
+          }
+        ]
+      },
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/_launcher.py\" post_agent"
+          },
+          {
+            "type": "command",
+            "command": "python -c \"\" || python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/_launcher.py\" post_agent"
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/_launcher.py\" post_bash"
+          },
+          {
+            "type": "command",
+            "command": "python -c \"\" || python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/_launcher.py\" post_bash"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/_launcher.py\" stop_check"
+          },
+          {
+            "type": "command",
+            "command": "python -c \"\" || python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/_launcher.py\" stop_check"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/_launcher.py\" prompt_submit"
+          },
+          {
+            "type": "command",
+            "command": "python -c \"\" || python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/_launcher.py\" prompt_submit"
+          },
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/_launcher.py\" prompt_intent"
+          },
+          {
+            "type": "command",
+            "command": "python -c \"\" || python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/_launcher.py\" prompt_intent"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "gantry-tools",
+  "owner": {
+    "name": "Gantry maintainers"
+  },
+  "metadata": {
+    "description": "Gantry: an engineering harness for Claude Code.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "gantry",
+      "source": "./plugins/gantry",
+      "description": "An engineering harness for Claude Code: lanes, gates, reviewers, and an audit trail."
+    }
+  ]
+}

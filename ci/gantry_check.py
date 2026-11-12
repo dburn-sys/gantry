@@ -17,7 +17,7 @@ import re
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "hooks"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "plugins" / "gantry" / "hooks"))
 from _gantry import approved_for_branch, chain_verify, spec_slugs  # noqa: E402
 
 CHAINED = ("overrides.log", "approvals.jsonl", "accepted-findings.log")
