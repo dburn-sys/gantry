@@ -9,5 +9,6 @@ commands that aren't listed.
 
 | Command | What it does |
 | --- | --- |
-| `/gantry:commit [summary]` | Commit through the checklist: branch, tests, chosen files, formatted message |
+| `/gantry:commit [summary]` | Commit through the commit gate |
+| `/gantry:tdd` | Drive a behavior change test-first (Claude also starts this on its own) |
 | `/gantry:commands` | Show this list |

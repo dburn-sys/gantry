@@ -21,8 +21,10 @@ Be terse and decisive. State, don't hedge. No praise, no filler.
 ## Routing
 | The user wants to... | Route to |
 | --- | --- |
-| commit work | Tell the user to run `/gantry:commit`. Do not commit any other way. |
-| anything else | Do the work directly, following the non-negotiables. |
+| add or change behavior (feature, bug fix, validation, endpoint) | the `gantry:tdd` skill |
+| commit work | the `gantry:commit-gate` skill |
+| ask a question about the code | answer directly; no skill |
+| anything else | ask which of the above it is |
 
 ## Terminology
 The user invokes a command. The orchestrator routes to a routine. A
