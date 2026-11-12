@@ -8,7 +8,7 @@ from _gantry import chain_verify  # noqa: E402
 
 def main(root: Path) -> int:
     broken = 0
-    for name in ("overrides.log", "approvals.jsonl"):
+    for name in ("overrides.log", "approvals.jsonl", "accepted-findings.log"):
         line = chain_verify(root / ".gantry" / name)
         if line is None:
             print(f"{name}: ok")

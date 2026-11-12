@@ -47,13 +47,46 @@ def check_findings(root: Path, branch: str) -> None:
     if "disposition" not in cols:
         return
     i = cols.index("disposition")
-    open_rows = [r for r in body if len(r.strip("|").split("|")) > i
-                 and not r.strip("|").split("|")[i].strip()]
+    sev = cols.index("severity") if "severity" in cols else None
+    num = cols.index("#") if "#" in cols else None
+    accepted = accepted_findings(root, runs[-1].parent.name)
+    open_rows, unaccepted = [], []
+    for r in body:
+        cells = [c.strip() for c in r.strip("|").split("|")]
+        if len(cells) <= i:
+            continue
+        disposition = cells[i].lower()
+        if not disposition:
+            open_rows.append(r)
+            continue
+        blocking = sev is not None and cells[sev].upper() in ("CRITICAL", "HIGH")
+        if blocking and not disposition.startswith("fixed"):
+            n = cells[num] if num is not None else "?"
+            if not (disposition.startswith("accepted") and n in accepted):
+                unaccepted.append(n)
     if open_rows:
         deny_unless_overridden(root, "G-FINDINGS",
             f"Gantry: {len(open_rows)} review finding(s) in {runs[-1].parent.name} have no "
             "disposition. Mark each one fixed (with the commit), accepted (with a "
             "reason), or deferred ([NEEDS-TRIAGE] and a ticket).")
+    if unaccepted:
+        deny_unless_overridden(root, "G-FINDINGS",
+            f"Gantry: blocking finding(s) {', '.join(unaccepted)} in {runs[-1].parent.name} "
+            "aren't fixed. A CRITICAL or HIGH finding is either fixed, or accepted by a "
+            "person typing: accept finding <n> because <reason>.")
+
+
+def accepted_findings(root: Path, run: str) -> set[str]:
+    """Finding numbers a person accepted for this run, from the chained log."""
+    log = root / ".gantry" / "accepted-findings.log"
+    if not log.exists():
+        return set()
+    out = set()
+    for line in log.read_text(encoding="utf-8").splitlines():
+        fields = [f.strip() for f in line.split(" | ")]
+        if len(fields) >= 5 and fields[3] == run:
+            out.add(fields[4])
+    return out
 
 
 def check_evidence(root: Path, test_command: str) -> None:
@@ -160,6 +193,12 @@ def main() -> None:
         if not args:
             continue
         sub = args[0]
+
+        if sub in ("commit", "push", "merge", "rebase") and data.get("agent_id"):
+            deny_unless_overridden(root, "G-SUBAGENT",
+                f"Gantry: subagents don't {sub}. Finish the task and return "
+                "your completion report; the main session reviews and "
+                "commits through gantry:commit-gate.")
 
         if sub == "push" and is_force(args):
             deny_unless_overridden(root, "G-FORCE", "Gantry: force pushes are refused in this repository. "

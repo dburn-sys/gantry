@@ -12,6 +12,25 @@ from _gantry import (GATES, TOKEN_MINUTES, _sha8, chain_append, current_branch, 
 APPROVE = re.compile(r"^\s*approve spec ([a-z0-9][a-z0-9-]*)\s*$", re.I)
 CONFIRM = re.compile(r"\[CONFIRM-\d+\](?!.*resolved:)")
 OVERRIDE = re.compile(r"^\s*override (G-[A-Z]+) because (.+?)\s*$", re.I | re.S)
+ACCEPT = re.compile(r"^\s*accept finding (\d+) because (.+?)\s*$", re.I | re.S)
+
+
+def handle_accept(root: Path, number: str, reason: str) -> None:
+    """A person accepts a blocking finding in this branch's latest run report."""
+    if len(reason.split()) < 5:
+        emit({"decision": "block",
+              "reason": "Gantry: accepting a finding needs a real reason of at least five words."})
+    branch = current_branch(root)
+    runs = sorted((root / ".gantry" / "runs").glob(f"*{branch.replace('/', '-')}*/report.md"))
+    if not runs:
+        emit({"decision": "block", "reason": f"Gantry: no run report for {branch}, so no finding {number}."})
+    run = runs[-1].parent.name
+    who = git_email(root)
+    chain_append(root / ".gantry" / "accepted-findings.log",
+                 [now_iso(), who, branch, run, number, " ".join(reason.split())])
+    emit({"hookSpecificOutput": {"hookEventName": "UserPromptSubmit",
+          "additionalContext": f"Gantry recorded that {who} accepted finding {number} in "
+                               f"{run}. Set its disposition to \"accepted: <reason>\" in the run report."}})
 
 
 def handle_override(root: Path, gate: str, reason: str) -> None:
@@ -43,6 +62,9 @@ def main() -> None:
     o = OVERRIDE.match(data.get("prompt", ""))
     if o:
         handle_override(root, o.group(1), o.group(2))
+    a = ACCEPT.match(data.get("prompt", ""))
+    if a:
+        handle_accept(root, a.group(1), a.group(2))
     m = APPROVE.match(data.get("prompt", ""))
     if not m:
         return

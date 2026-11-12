@@ -14,9 +14,34 @@ def read_input() -> dict:
     return data
 
 
+def _toplevel(path: str) -> str | None:
+    try:
+        r = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=path,
+                           capture_output=True, text=True, timeout=5)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return str(Path(r.stdout.strip()).resolve()) if r.returncode == 0 else None
+
+
+def in_other_worktree(cwd: str) -> bool:
+    """True when cwd is inside a different git checkout than CLAUDE_PROJECT_DIR.
+
+    CLAUDE_PROJECT_DIR is set once, when the session starts. A subagent working
+    in a git worktree runs its commands somewhere else, and Gantry must look at
+    that checkout: its tests, its tree, its branch.
+    """
+    project = os.environ.get("CLAUDE_PROJECT_DIR")
+    if not project or not Path(cwd).is_dir():
+        return False
+    mine = _toplevel(cwd)
+    return mine is not None and mine != _toplevel(project)
+
+
 def gantry_root(data: dict) -> Path | None:
     """Return the nearest folder containing .gantry/, or None (dormant)."""
-    start = os.environ.get("CLAUDE_PROJECT_DIR") or data.get("cwd") or "."
+    cwd = data.get("cwd")
+    start = cwd if cwd and in_other_worktree(cwd) else (
+        os.environ.get("CLAUDE_PROJECT_DIR") or cwd or ".")
     here = Path(start).resolve()
     for folder in [here, *here.parents]:
         if (folder / ".gantry").is_dir():
@@ -198,7 +223,8 @@ def runs_on(root: Path, branch: str) -> list[dict]:
 # ---- Chapter 14: overrides and hash-chained logs ------------------------------
 
 GATES = {"G-MAIN", "G-FORCE", "G-SECRET", "G-HARNESS", "G-EVIDENCE", "G-SPEC", "G-FIX",
-         "G-CHORE", "G-LANE", "G-SPIKE", "G-REFACTOR", "G-MIGRATION", "G-FINDINGS"}
+         "G-CHORE", "G-LANE", "G-SPIKE", "G-REFACTOR", "G-MIGRATION", "G-FINDINGS",
+         "G-SUBAGENT"}
 TOKEN_MINUTES = 10
 
 

@@ -20,7 +20,7 @@ LANES = {
              r"is it possible|spike)\b",
 }
 QUESTION = re.compile(r"^\s*(what|why|how does|how do|where|which|explain)\b|\?\s*$", re.I)
-SKIP = re.compile(r"^\s*(/|approve spec |override |btw\b)", re.I)
+SKIP = re.compile(r"^\s*(/|approve spec |override |accept finding |btw\b)", re.I)
 NEGATED = re.compile(r"\b(don'?t|do not|just|only)\b", re.I)
 
 

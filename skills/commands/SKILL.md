@@ -22,4 +22,5 @@ describe the work in plain English and Gantry routes it.
 | `/gantry:audit [range]` | Summarize overrides, approvals, ADRs, and findings |
 | `/gantry:status` | Show the branch, lane, run, spec, last test run, and open questions |
 | `/gantry:btw <question>` | Ask a quick question; nothing starts, nothing changes |
+| `/gantry:executing-plans` | Build an approved plan in batches, with author agents and a checkpoint between batches |
 | `/gantry:commands` | Show this list |

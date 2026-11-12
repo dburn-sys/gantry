@@ -19,10 +19,20 @@ Write tasks in this format:
     - Verify: test "AC-4: approver cannot approve own expense" passes
     - Covers: AC-4
     - Depends on: T-2
+    - Author: backend
+    - Tier: engineer
 
 A task needing two sentences of Change is two tasks. Mark the tasks that form
 the minimum viable slice with `(MVP)` after the title.
-**Exit when:** every task has all five parts.
+
+Author: backend for API routes, services, workers, and migrations; frontend
+for anything under web/ or *.tsx; infra for Dockerfiles, CI, and infrastructure.
+
+Tier: helper if the task changes one or two files and the exact change is
+stated; senior-engineer if the task introduces a new module boundary, has more
+than one reasonable design, or needs a decision not covered by the spec or an
+ADR; otherwise engineer.
+**Exit when:** every task has all seven parts.
 
 ## Phase 3: Cover
 Add a coverage table mapping every AC to its tasks.

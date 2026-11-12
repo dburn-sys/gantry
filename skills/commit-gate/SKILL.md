@@ -22,7 +22,10 @@ Read ${CLAUDE_PLUGIN_ROOT}/includes/review-matrix.md, and the project's
 (`git diff --name-only`, plus the diff content for import and env-var
 cues). Dispatch every reviewer whose row matches, in parallel, each with
 the same brief. Do not inline a copy of the matrix in this skill; always
-read the file. List the reviewers you dispatched, and why, in the run report.
+read the file. If the work came from author agents, add every reviewer in their
+"Reviewers required" blocks. List the reviewers you dispatched, and why, in the
+run report. When more than one reviewer ran, dispatch gantry:finding-triage
+with all their reports and use its merged table.
 
 Each brief MUST contain:
 1. The output of `git diff` for all uncommitted changes.

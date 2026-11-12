@@ -24,7 +24,7 @@ def is_protected(path: Path, root: Path) -> bool:
     if plugin and Path(plugin).resolve() in [path, *path.parents]:
         return True
     protected = {"secrets-allow.txt", "evidence.jsonl", "unproven.log", "approvals.jsonl",
-                 "overrides.log", "override-token.json"}
+                 "overrides.log", "override-token.json", "accepted-findings.log"}
     return path.name in protected and path.parent.name == ".gantry"
 
 

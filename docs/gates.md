@@ -4,6 +4,9 @@ Every refusal starts with its gate ID. To get past one deliberately, type:
 `override <ID> because <a reason of at least five words>`. The override is
 logged and lets exactly one blocked action through within ten minutes.
 
+A blocking review finding can be accepted, rather than fixed, only by a person:
+`accept finding <n> because <a reason of at least five words>`.
+
 | ID | Refuses | Chapter |
 | --- | --- | --- |
 | `G-MAIN` | Commits or pushes to main or master | 9 |
@@ -18,4 +21,5 @@ logged and lets exactly one blocked action through within ten minutes.
 | `G-SPIKE` | Merging spike branches | 13 |
 | `G-REFACTOR` | Refactors without a green baseline, or that change existing tests | 13 |
 | `G-MIGRATION` | Edits to committed migrations | 14 |
-| `G-FINDINGS` | Commits while a review finding has no disposition | 14 |
+| `G-FINDINGS` | Commits while a review finding has no disposition, or a CRITICAL or HIGH finding is neither fixed nor accepted by a person | 14, 18 |
+| `G-SUBAGENT` | Subagents committing, pushing, merging, or rebasing | 18 |
