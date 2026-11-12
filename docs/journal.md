@@ -11,3 +11,9 @@ requirement should trace back to an entry here.
 - Ch 2: Settings deny rules hold even when Claude is convinced.
 - Ch 2: Deny rules match command text, not meaning. "+main", "--force-with-lease",
   and "git -c x push" all got past "deny git push --force".
+- Ch 3: Asked for a PRD without an interview. Got a confident document about someone else's
+  project. Interview first, every time.
+- Ch 4: Rules ran out when the tests couldn't run, and Claude mocked the database. Principles
+  decide the cases rules don't cover.
+- Ch 5 (needs code): running only part of the suite; editing after the last test run;
+  committing to main when told to; force pushing with syntax deny rules miss.
