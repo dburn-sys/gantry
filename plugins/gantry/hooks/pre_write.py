@@ -110,6 +110,14 @@ def main() -> None:
     tool = data.get("tool_name")
     if tool not in ("Write", "Edit"):
         return
+    target_file = Path((data.get("tool_input") or {}).get("file_path", ""))
+    if target_file.is_absolute():
+        # Judge the write by the repository the file is in, not by the session's
+        # folder: a write into another repo must meet that repo's gates.
+        folder = target_file.parent
+        while not folder.is_dir() and folder != folder.parent:
+            folder = folder.parent
+        data = dict(data, cwd=str(folder))
     root = gantry_root(data)
     if root is None:
         bare = uninitialized_repo(data)
