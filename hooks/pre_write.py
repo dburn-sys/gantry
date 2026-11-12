@@ -21,7 +21,8 @@ def is_protected(path: Path, root: Path) -> bool:
     plugin = os.environ.get("CLAUDE_PLUGIN_ROOT")
     if plugin and Path(plugin).resolve() in [path, *path.parents]:
         return True
-    return path.name == "secrets-allow.txt" and path.parent.name == ".gantry"
+    protected = {"secrets-allow.txt", "evidence.jsonl", "unproven.log"}
+    return path.name in protected and path.parent.name == ".gantry"
 
 
 def load_allowlist(root: Path) -> set[str]:

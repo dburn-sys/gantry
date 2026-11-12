@@ -41,6 +41,50 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/post_bash.py\""
+          },
+          {
+            "type": "command",
+            "command": "python -c \"\" || python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/post_bash.py\""
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/post_bash.py\""
+          },
+          {
+            "type": "command",
+            "command": "python -c \"\" || python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/post_bash.py\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/stop_check.py\""
+          },
+          {
+            "type": "command",
+            "command": "python -c \"\" || python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/stop_check.py\""
+          }
+        ]
+      }
     ]
   }
 }

@@ -2,15 +2,51 @@
 import re
 import shlex
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from _gantry import current_branch, deny, gantry_root, read_input, run_hook  # noqa: E402
+from _gantry import (current_branch, deny, gantry_root, latest_run, read_config,  # noqa: E402
+                     read_input, run_hook, tree_fingerprint)
 from _secrets import scan  # noqa: E402
 
 PROTECTED = {"main", "master"}
 GIT_OPTS_WITH_VALUE = {"-c", "-C", "--git-dir", "--work-tree", "--namespace"}
 HARNESS_DIR = ".gantry"
+LEDGER_FILES = ("evidence.jsonl", "unproven.log")
+
+
+def writes_into_harness(command: str) -> bool:
+    """Redirects, tee, or in-place edits aimed at .gantry/ files."""
+    return bool(re.search(r"(>>?|\btee\b(\s+-a)?|\bsed\s+-i\S*)\s*\S*\.gantry/", command))
+
+
+def warn_unproven(root: Path, reason: str) -> None:
+    with (root / ".gantry" / "unproven.log").open("a", encoding="utf-8") as f:
+        f.write(f"{datetime.now(timezone.utc).isoformat(timespec='seconds')} "
+                f"commit allowed unchecked: {reason}\n")
+
+
+def check_evidence(root: Path, test_command: str) -> None:
+    run = latest_run(root)
+    how = (f"Run `{test_command}` exactly (no extra file or test arguments, "
+           "no pipes or redirects, not in the background), then commit again.")
+    if run is None:
+        deny(f"Gantry: no test run recorded in this repository. {how}")
+    if run["scope"] != "full":
+        deny(f"Gantry: the last test run ({run['at']}) was partial: "
+             f"`{run['command']}`. Commits need a full-suite run. {how}")
+    if not run["passed"]:
+        deny(f"Gantry: the last test run ({run['at']}) failed. Fix the "
+             f"failures through the gantry:tdd skill. {how}")
+    try:
+        current = tree_fingerprint(root)
+    except Exception as exc:  # noqa: BLE001 - principle 3, recorded as unproven
+        warn_unproven(root, f"{type(exc).__name__}: {exc}")
+        raise
+    if run["tree"] != current:
+        deny(f"Gantry: files changed after the last passing test run "
+             f"({run['at']}). The tests haven't run against this code. {how}")
 
 
 def touches_harness(words: list[str]) -> bool:
@@ -78,6 +114,10 @@ def main() -> None:
              f"({findings[0].kind}, {findings[0].preview}). Don't put "
              "secret values in commands; they're saved in the session log.")
 
+    if writes_into_harness(command):
+        deny("Gantry: commands can't write into .gantry/. Those files are "
+             "records Gantry keeps itself.")
+
     for words in simple_commands(command):
         if touches_harness(words):
             deny("Gantry: .gantry/ holds this repo's harness state and can't "
@@ -101,10 +141,14 @@ def main() -> None:
                 deny(f"Gantry: pushing to {', '.join(sorted(hit))} is "
                      "refused. Push your branch and open a pull request.")
 
-        if sub == "commit" and current_branch(root) in PROTECTED:
-            deny("Gantry: commits on main or master are refused. Create a "
-                 "branch with `git switch -c <type>/<short-name>`, then "
-                 "commit through the gantry:commit-gate skill.")
+        if sub == "commit":
+            if current_branch(root) in PROTECTED:
+                deny("Gantry: commits on main or master are refused. Create a "
+                     "branch with `git switch -c <type>/<short-name>`, then "
+                     "commit through the gantry:commit-gate skill.")
+            test_command = read_config(root).get("test_command")
+            if test_command:
+                check_evidence(root, test_command)
 
 
 if __name__ == "__main__":

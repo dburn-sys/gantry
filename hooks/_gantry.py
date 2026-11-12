@@ -62,3 +62,63 @@ def run_hook(check: str, main) -> None:
     except Exception as exc:  # noqa: BLE001 - fail open on purpose
         warn_and_allow(check, exc)
     sys.exit(0)
+
+
+def read_config(root: Path) -> dict:
+    """Parse the flat key: value lines between the --- markers of .gantry/context.md."""
+    f = root / ".gantry" / "context.md"
+    if not f.exists():
+        return {}
+    lines = f.read_text(encoding="utf-8").splitlines()
+    if not lines or lines[0].strip() != "---":
+        return {}
+    config = {}
+    for line in lines[1:]:
+        if line.strip() == "---":
+            break
+        if ":" in line:
+            key, value = line.split(":", 1)
+            config[key.strip()] = value.strip()
+    return config
+
+
+def tree_fingerprint(root: Path) -> str:
+    """A hash of HEAD plus every uncommitted change outside .gantry/, staged or not."""
+    import hashlib
+
+    def git(*args: str) -> bytes:
+        r = subprocess.run(["git", *args], cwd=root, capture_output=True, timeout=15)
+        if r.returncode != 0:
+            raise RuntimeError(r.stderr.decode(errors="replace").strip())
+        return r.stdout
+
+    outside_gantry = ["--", ".", ":(exclude).gantry"]
+    h = hashlib.sha256()
+    h.update(git("rev-parse", "HEAD"))
+    h.update(git("diff", "HEAD", "--binary", *outside_gantry))
+    untracked = git("ls-files", "--others", "--exclude-standard", "-z", *outside_gantry)
+    for name in sorted(filter(None, untracked.split(b"\0"))):
+        h.update(name)
+        h.update(git("hash-object", "--", name.decode()))
+    return h.hexdigest()[:16]
+
+
+def ledger_records(root: Path) -> list[dict]:
+    ledger = root / ".gantry" / "evidence.jsonl"
+    if not ledger.exists():
+        return []
+    return [json.loads(line) for line in ledger.read_text(encoding="utf-8").splitlines()
+            if line.strip()]
+
+
+def latest_run(root: Path) -> dict | None:
+    records = ledger_records(root)
+    return records[-1] if records else None
+
+
+def has_uncommitted_changes(root: Path) -> bool:
+    r = subprocess.run(["git", "status", "--porcelain", "--", ".", ":(exclude).gantry"],
+                       cwd=root, capture_output=True, text=True, timeout=10)
+    if r.returncode != 0:
+        raise RuntimeError(r.stderr.strip())
+    return bool(r.stdout.strip())
