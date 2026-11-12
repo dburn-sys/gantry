@@ -6,9 +6,18 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from _gantry import current_branch, deny, gantry_root, read_input, run_hook  # noqa: E402
+from _secrets import scan  # noqa: E402
 
 PROTECTED = {"main", "master"}
 GIT_OPTS_WITH_VALUE = {"-c", "-C", "--git-dir", "--work-tree", "--namespace"}
+HARNESS_DIR = ".gantry"
+
+
+def touches_harness(words: list[str]) -> bool:
+    destructive = {"rm", "rmdir", "mv", "del", "Remove-Item", "rd"}
+    if not words or Path(words[0]).name not in destructive and words[:2] != ["git", "rm"]:
+        return False
+    return any(HARNESS_DIR in w for w in words[1:])
 
 
 def simple_commands(line: str):
@@ -63,7 +72,17 @@ def main() -> None:
         return                      # principle 7: dormant until invited
     command = (data.get("tool_input") or {}).get("command", "")
 
+    findings = scan(command)
+    if findings:
+        deny("Gantry: this command contains what looks like a secret "
+             f"({findings[0].kind}, {findings[0].preview}). Don't put "
+             "secret values in commands; they're saved in the session log.")
+
     for words in simple_commands(command):
+        if touches_harness(words):
+            deny("Gantry: .gantry/ holds this repo's harness state and can't "
+                 "be removed or moved by the agent. If the user wants to opt "
+                 "out of Gantry, they can delete it themselves.")
         args = git_args(words)
         if not args:
             continue

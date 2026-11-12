@@ -3,8 +3,14 @@
     "SessionStart": [
       {
         "hooks": [
-          { "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/session_start.py\"" },
-          { "type": "command", "command": "python -c \"\" || python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/session_start.py\"" }
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/session_start.py\""
+          },
+          {
+            "type": "command",
+            "command": "python -c \"\" || python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/session_start.py\""
+          }
         ]
       }
     ],
@@ -12,8 +18,27 @@
       {
         "matcher": "Bash|PowerShell",
         "hooks": [
-          { "type": "command", "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/pre_bash.py\"" },
-          { "type": "command", "command": "python -c \"\" || python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/pre_bash.py\"" }
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/pre_bash.py\""
+          },
+          {
+            "type": "command",
+            "command": "python -c \"\" || python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/pre_bash.py\""
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/pre_write.py\""
+          },
+          {
+            "type": "command",
+            "command": "python -c \"\" || python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/pre_write.py\""
+          }
         ]
       }
     ]
