@@ -1,0 +1,15 @@
+diff --git a/web/src/ExpenseList.tsx b/web/src/ExpenseList.tsx
+new file mode 100644
+--- /dev/null
++++ b/web/src/ExpenseList.tsx
+@@ -0,0 +1,10 @@
++import { useEffect, useState } from "react";
++import { fetchExpenses, type Expense } from "./api";
++
++export function ExpenseList({ companyId, status }: { companyId: string; status: string }) {
++  const [expenses, setExpenses] = useState<Expense[]>([]);
++  useEffect(() => {
++    fetchExpenses(companyId, status).then(setExpenses);
++  }, [companyId]);
++  return <ul>{expenses.map((e) => <li key={e.id}>{e.description}</li>)}</ul>;
++}

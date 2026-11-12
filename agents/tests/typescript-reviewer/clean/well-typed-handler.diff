@@ -1,0 +1,22 @@
+diff --git a/src/receipts/routes.ts b/src/receipts/routes.ts
+--- a/src/receipts/routes.ts
++++ b/src/receipts/routes.ts
+@@ -1,5 +1,18 @@
++const ReceiptBody = {
++  type: "object",
++  required: ["expenseId", "totalCents"],
++  properties: { expenseId: { type: "string", format: "uuid" }, totalCents: { type: "integer", minimum: 1 } },
++  additionalProperties: false,
++} as const;
++
+ export function registerReceipts(app: FastifyInstance) {
+   app.get("/receipts", async (req) => {
+     return listReceipts(req.user!.companyId);
+   });
++
++  app.post<{ Body: { expenseId: string; totalCents: number } }>(
++    "/receipts", { schema: { body: ReceiptBody } }, async (req, reply) => {
++      const saved = await saveReceipt(req.user!.companyId, req.body.expenseId, req.body.totalCents);
++      return reply.code(201).send(saved);
++    });
+ }

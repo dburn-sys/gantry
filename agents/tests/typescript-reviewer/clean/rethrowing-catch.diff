@@ -1,0 +1,15 @@
+diff --git a/src/approvals/notify.ts b/src/approvals/notify.ts
+--- a/src/approvals/notify.ts
++++ b/src/approvals/notify.ts
+@@ -1,3 +1,10 @@
++export class NotifyError extends Error {}
++
+ export async function notifyApprover(email: string, expenseId: string) {
+-  await mailer.send({ to: email, template: "approval-needed", data: { expenseId } });
++  try {
++    await mailer.send({ to: email, template: "approval-needed", data: { expenseId } });
++  } catch (err) {
++    logger.warn({ err, expenseId }, "approval email failed");
++    throw new NotifyError(`could not notify approver for ${expenseId}`, { cause: err });
++  }
+ }

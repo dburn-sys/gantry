@@ -1,0 +1,23 @@
+diff --git a/src/audit.ts b/src/audit.ts
+new file mode 100644
+--- /dev/null
++++ b/src/audit.ts
+@@ -0,0 +1,9 @@
++import type { User } from "./auth/users.js";
++import { pool } from "./db.js";
++
++export async function recordAudit(actor: User, event: string, subjectId: string): Promise<void> {
++  await pool.query(
++    "INSERT INTO audit_events (actor_id, event, subject_id) VALUES ($1, $2, $3)",
++    [actor.id, event, subjectId],
++  );
++}
+diff --git a/src/app.ts b/src/app.ts
+--- a/src/app.ts
++++ b/src/app.ts
+@@ -3,4 +3,5 @@
+        VALUES ($1, $2, $3, $4, $5, $6) RETURNING ${COLUMNS}`,
+       [b.description, b.category, cents, b.currency, b.spentOn, req.user!.id],
+     ));
++    recordAudit(req.user!, "expense.created", rows[0].id);
+     return reply.code(201).send(toApi(rows[0]));

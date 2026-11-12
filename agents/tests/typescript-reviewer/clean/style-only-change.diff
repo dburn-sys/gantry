@@ -1,0 +1,17 @@
+diff --git a/src/money.ts b/src/money.ts
+--- a/src/money.ts
++++ b/src/money.ts
+@@ -1,6 +1,9 @@
++/** Format integer cents as a decimal string, e.g. 8450 -> "84.50". */
+ export function fromCents(cents: string | number | bigint): string {
+-  const n = BigInt(cents);
+-  const sign = n < 0n ? "-" : "";
+-  const abs = n < 0n ? -n : n;
+-  return `${sign}${abs / 100n}.${(abs % 100n).toString().padStart(2, "0")}`;
++  const value = BigInt(cents);
++  const sign = value < 0n ? "-" : "";
++  const magnitude = value < 0n ? -value : value;
++  const whole = magnitude / 100n;
++  const fraction = (magnitude % 100n).toString().padStart(2, "0");
++  return `${sign}${whole}.${fraction}`;
+ }

@@ -1,0 +1,18 @@
+diff --git a/web/src/ExpenseCard.tsx b/web/src/ExpenseCard.tsx
+new file mode 100644
+--- /dev/null
++++ b/web/src/ExpenseCard.tsx
+@@ -0,0 +1,13 @@
++import { useState } from "react";
++import type { Expense } from "./api";
++
++export function ExpenseCard({ expense }: { expense: Expense | null }) {
++  if (!expense) return null;
++  const [expanded, setExpanded] = useState(false);
++  return (
++    <div onClick={() => setExpanded(!expanded)}>
++      <h3>{expense.description}</h3>
++      {expanded && <p>{expense.amount} {expense.currency}</p>}
++    </div>
++  );
++}

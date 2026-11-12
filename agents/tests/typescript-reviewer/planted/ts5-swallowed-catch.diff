@@ -1,0 +1,13 @@
+diff --git a/src/payouts/mark-paid.ts b/src/payouts/mark-paid.ts
+--- a/src/payouts/mark-paid.ts
++++ b/src/payouts/mark-paid.ts
+@@ -1,4 +1,8 @@
+ export async function markPaid(db: PoolClient, expenseId: string, payoutRef: string) {
+-  await db.query("UPDATE expenses SET status = 'paid', payout_ref = $2 WHERE id = $1", [expenseId, payoutRef]);
++  try {
++    await db.query("UPDATE expenses SET status = 'paid', payout_ref = $2 WHERE id = $1", [expenseId, payoutRef]);
++  } catch {
++    // the payout already went out; don't fail the webhook over a status update
++  }
+   return { ok: true };
+ }

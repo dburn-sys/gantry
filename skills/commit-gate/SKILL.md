@@ -17,7 +17,9 @@ Run the test command from CLAUDE.md, exactly as written.
 error in one line. Do not change code or tests to get past this phase.
 
 ## Phase 3: Review
-Dispatch the `gantry:code-reviewer` agent. The brief MUST contain:
+Dispatch the `gantry:code-reviewer` agent. If any changed file ends in `.ts`
+or `.tsx`, or is a `tsconfig*.json`, also dispatch the
+`gantry:typescript-reviewer` agent, in parallel, with the same brief. Each brief MUST contain:
 1. The output of `git diff` for all uncommitted changes.
 2. The list of changed files.
 3. The obligations table from the tdd skill's Phase 4, if this change went
@@ -26,7 +28,7 @@ Dispatch the `gantry:code-reviewer` agent. The brief MUST contain:
 The brief MUST NOT describe the code's quality or say it is "ready," "clean,"
 or "working." Describe what changed, not how good it is.
 
-**Exit when:** the reviewer's verdict is PASS.
+**Exit when:** every dispatched reviewer's verdict is PASS.
 **If not:** show the findings table to the user. Route each HIGH or CRITICAL
 finding to the gantry:tdd skill, then run this skill again from Phase 1.
 

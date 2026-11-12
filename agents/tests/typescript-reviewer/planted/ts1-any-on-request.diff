@@ -1,0 +1,14 @@
+diff --git a/src/receipts/routes.ts b/src/receipts/routes.ts
+--- a/src/receipts/routes.ts
++++ b/src/receipts/routes.ts
+@@ -2,4 +2,10 @@
+   app.get("/receipts", async (req) => {
+     return listReceipts(req.user!.companyId);
+   });
++
++  app.post("/receipts", async (req, reply) => {
++    const receipt = req.body as Receipt;
++    const saved = await saveReceipt(req.user!.companyId, receipt.expenseId, receipt.totalCents);
++    return reply.code(201).send(saved);
++  });
+ }

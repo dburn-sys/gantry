@@ -1,0 +1,16 @@
+diff --git a/src/receipts/reader.ts b/src/receipts/reader.ts
+--- a/src/receipts/reader.ts
++++ b/src/receipts/reader.ts
+@@ -1,4 +1,9 @@
+-export async function readReceipt(file: Buffer): Promise<ReceiptText> {
+-  const text = await ocr(file);
+-  return parseReceipt(text);
++export async function readReceipt(file: Buffer): Promise<ReceiptText | null> {
++  try {
++    const text = await ocr(file);
++    return parseReceipt(text);
++  } catch (err: any) {
++    logger.warn(`receipt read failed: ${err.message} (code ${err.code})`);
++    return null;
++  }
+ }

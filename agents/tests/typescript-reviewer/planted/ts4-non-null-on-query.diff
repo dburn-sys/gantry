@@ -1,0 +1,11 @@
+diff --git a/src/expenses/lookup.ts b/src/expenses/lookup.ts
+--- a/src/expenses/lookup.ts
++++ b/src/expenses/lookup.ts
+@@ -1,4 +1,5 @@
+-export async function findExpense(db: PoolClient, id: string): Promise<Expense | null> {
++export async function findExpense(db: PoolClient, id: string): Promise<Expense> {
+   const { rows } = await db.query<ExpenseRow>(`SELECT ${COLUMNS} FROM expenses WHERE id = $1`, [id]);
+-  return rows[0] ? toApi(rows[0]) : null;
++  const row = rows[0]!;
++  return toApi(row);
+ }

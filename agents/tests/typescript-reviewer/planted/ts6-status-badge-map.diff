@@ -1,0 +1,15 @@
+diff --git a/src/expenses/badge.ts b/src/expenses/badge.ts
+new file mode 100644
+--- /dev/null
++++ b/src/expenses/badge.ts
+@@ -0,0 +1,10 @@
++import type { Status } from "../approvals/service.js";
++
++type Badge = { color: string; text: string };
++
++export function badgeFor(status: Status): Badge {
++  if (status === "submitted") return { color: "amber", text: "Pending" };
++  if (status === "approved") return { color: "blue", text: "Approved" };
++  if (status === "paid") return { color: "green", text: "Paid" };
++  return { color: "grey", text: "" };
++}
