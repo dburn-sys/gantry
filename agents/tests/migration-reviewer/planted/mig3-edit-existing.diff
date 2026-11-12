@@ -1,0 +1,7 @@
+diff --git a/migrations/005_expense_states.sql b/migrations/005_expense_states.sql
+--- a/migrations/005_expense_states.sql
++++ b/migrations/005_expense_states.sql
+@@ -1,2 +1,2 @@
+ ALTER TABLE expenses ADD COLUMN status text NOT NULL DEFAULT 'submitted'
+-  CHECK (status IN ('submitted', 'approved', 'rejected', 'paid'));
++  CHECK (status IN ('submitted', 'approved', 'rejected', 'paid', 'withdrawn'));

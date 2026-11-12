@@ -1,0 +1,21 @@
+diff --git a/package.json b/package.json
+--- a/package.json
++++ b/package.json
+@@ -1,4 +1,5 @@
+   "dependencies": {
+     "fastify": "^5.12.8",
++    "payrail-node": "^3.4.0",
+     "pg": "^8.23.1"
+   },
+diff --git a/package-lock.json b/package-lock.json
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -1,2 +1,8 @@
++    "node_modules/payrail-node": {
++      "version": "3.4.0",
++      "resolved": "https://registry.npmjs.org/payrail-node/-/payrail-node-3.4.0.tgz",
++      "hasInstallScript": true,
++      "license": "MIT"
++    },
+     "node_modules/pg": {
+       "version": "8.23.1",

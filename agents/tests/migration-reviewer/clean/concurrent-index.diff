@@ -1,0 +1,10 @@
+diff --git a/migrations/010_expense_spent_on_index.sql b/migrations/010_expense_spent_on_index.sql
+new file mode 100644
+--- /dev/null
++++ b/migrations/010_expense_spent_on_index.sql
+@@ -0,0 +1,5 @@
++-- expenses may be large. CREATE INDEX CONCURRENTLY avoids blocking writes, and
++-- can't run in a transaction: scripts/migrate.ts runs files marked
++-- "-- no-transaction" outside one.
++-- no-transaction
++CREATE INDEX CONCURRENTLY IF NOT EXISTS expenses_spent_on ON expenses (spent_on);

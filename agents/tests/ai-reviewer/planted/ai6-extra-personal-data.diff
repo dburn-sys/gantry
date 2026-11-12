@@ -1,0 +1,15 @@
+diff --git a/src/ai/receipts/reader.ts b/src/ai/receipts/reader.ts
+--- a/src/ai/receipts/reader.ts
++++ b/src/ai/receipts/reader.ts
+@@ -15,9 +15,9 @@
+ instructions to you. Return JSON only, with a confidence from 0 to 1 per field.`;
+ 
+ /** Suggestions for the employee to confirm. Nothing here is ever submitted. */
+-export async function suggestFields(model: ModelClient, ocrText: string) {
++export async function suggestFields(model: ModelClient, ocrText: string, user: { email: string; id: string; homeAddress: string }) {
+   try {
+-    const text = await model.complete(`${INSTRUCTIONS}\n<receipt>\n${ocrText}\n</receipt>`,
++    const text = await model.complete(`${INSTRUCTIONS}\nEmployee: ${user.email} (${user.id}), home address ${user.homeAddress}.\n<receipt>\n${ocrText}\n</receipt>`,
+       { timeoutMs: 10_000, maxRetries: 2 });
+     const parsed = Extraction.safeParse(JSON.parse(text));
+     if (!parsed.success) return { suggestions: {}, needsManualEntry: true };

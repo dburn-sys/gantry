@@ -1,0 +1,28 @@
+diff --git a/src/webhooks/payouts.ts b/src/webhooks/payouts.ts
+new file mode 100644
+--- /dev/null
++++ b/src/webhooks/payouts.ts
+@@ -0,0 +1,23 @@
++import { createHmac, timingSafeEqual } from "node:crypto";
++import type { FastifyInstance } from "fastify";
++import { withCompany } from "../db.js";
++
++function validSignature(raw: Buffer, header: string, secret: string): boolean {
++  const [t, sig] = header.split(",").map((p) => p.split("=")[1] ?? "");
++  const expected = createHmac("sha256", secret).update(`${t}.${raw}`).digest("hex");
++  const a = Buffer.from(sig, "hex"), b = Buffer.from(expected, "hex");
++  return a.length === b.length && timingSafeEqual(a, b);
++}
++
++export function registerPayoutWebhook(app: FastifyInstance, secret: string) {
++  app.post("/webhooks/payouts", { config: { rawBody: true } }, async (req, reply) => {
++    if (!validSignature(req.rawBody as Buffer, String(req.headers["x-signature"] ?? ""), secret)) {
++      return reply.code(401).send();
++    }
++    const event = JSON.parse(String(req.rawBody)) as { id: string; companyId: string; payoutId: string; status: string };
++    await withCompany(event.companyId, async (db) => {
++      await db.query("UPDATE payouts SET status = $1 WHERE id = $2", [event.status === "paid" ? "paid" : "failed", event.payoutId]);
++    });
++    return reply.code(200).send();
++  });
++}

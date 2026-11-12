@@ -1,0 +1,9 @@
+diff --git a/Dockerfile b/Dockerfile
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -1,4 +1,4 @@
+-FROM node:22.11.0-bookworm-slim
++FROM node:latest
+ WORKDIR /app
+ COPY package*.json ./
+ RUN npm ci --omit=dev

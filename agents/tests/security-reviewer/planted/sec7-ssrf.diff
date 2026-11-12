@@ -1,0 +1,17 @@
+diff --git a/src/integrations/receipt-import.ts b/src/integrations/receipt-import.ts
+new file mode 100644
+--- /dev/null
++++ b/src/integrations/receipt-import.ts
+@@ -0,0 +1,12 @@
++import type { FastifyInstance } from "fastify";
++import { readReceipt } from "../ai/receipts/reader.js";
++
++export function registerReceiptImport(app: FastifyInstance) {
++  // Integrations send a link to a receipt image; we fetch it and read it.
++  app.post("/integrations/receipts", async (req) => {
++    const { receiptUrl } = req.body as { receiptUrl: string };
++    const res = await fetch(receiptUrl);
++    const image = Buffer.from(await res.arrayBuffer());
++    return readReceipt(image);
++  });
++}

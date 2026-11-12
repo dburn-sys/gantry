@@ -1,0 +1,22 @@
+diff --git a/src/ai/receipts/autosubmit.ts b/src/ai/receipts/autosubmit.ts
+new file mode 100644
+--- /dev/null
++++ b/src/ai/receipts/autosubmit.ts
+@@ -0,0 +1,17 @@
++import type { ModelClient } from "../model.js";
++import type { User } from "../../auth/users.js";
++import { suggestFields } from "./reader.js";
++import { createExpense } from "../../expenses/create.js";
++
++/** Email-in receipts: read the photo and file the expense straight away. */
++export async function fileEmailedReceipt(model: ModelClient, user: User, ocrText: string) {
++  const { suggestions, needsManualEntry } = await suggestFields(model, ocrText);
++  if (needsManualEntry) return null;
++  return createExpense(user, {
++    description: String(suggestions.merchant ?? "Receipt"),
++    amount: String(suggestions.amount ?? "0.00"),
++    spentOn: String(suggestions.spentOn ?? new Date().toISOString().slice(0, 10)),
++    category: String(suggestions.category ?? "other"),
++    currency: "USD",
++  });
++}

@@ -1,0 +1,25 @@
+diff --git a/src/ai/receipts/reader.ts b/src/ai/receipts/reader.ts
+--- a/src/ai/receipts/reader.ts
++++ b/src/ai/receipts/reader.ts
+@@ -18,13 +18,17 @@
+ /** Suggestions for the employee to confirm. Nothing here is ever submitted. */
+ export async function suggestFields(model: ModelClient, ocrText: string) {
+-  const text = await model.complete(`${INSTRUCTIONS}\n<receipt>\n${ocrText}\n</receipt>`,
+-    { timeoutMs: 10_000, maxRetries: 2 });
+-  const parsed = Extraction.safeParse(JSON.parse(text));
+-  if (!parsed.success) return { suggestions: {}, needsManualEntry: true };
+-  const suggestions = Object.fromEntries(Object.entries(parsed.data)
+-    .map(([k, f]) => [k, f.confidence >= THRESHOLD ? f.value : null]));
+-  return { suggestions, needsManualEntry: false };
++  try {
++    const text = await model.complete(`${INSTRUCTIONS}\n<receipt>\n${ocrText}\n</receipt>`,
++      { timeoutMs: 10_000, maxRetries: 2 });
++    const parsed = Extraction.safeParse(JSON.parse(text));
++    if (!parsed.success) return { suggestions: {}, needsManualEntry: true };
++    const suggestions = Object.fromEntries(Object.entries(parsed.data)
++      .map(([k, f]) => [k, f.confidence >= THRESHOLD ? f.value : null]));
++    return { suggestions, needsManualEntry: false };
++  } catch {
++    return { suggestions: {}, needsManualEntry: true };   // model down or bad JSON: the form still works
++  }
+ }

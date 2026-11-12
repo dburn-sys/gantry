@@ -1,0 +1,17 @@
+diff --git a/src/auth/invite.ts b/src/auth/invite.ts
+new file mode 100644
+--- /dev/null
++++ b/src/auth/invite.ts
+@@ -0,0 +1,12 @@
++import { randomBytes } from "node:crypto";
++import { withCompany } from "../db.js";
++import { hashApiKey } from "./apikeys.js";
++
++/** A one-time code emailed to a new user. Only its hash is stored. */
++export async function createInviteCode(companyId: string, email: string): Promise<string> {
++  const code = randomBytes(24).toString("base64url");
++  await withCompany(companyId, (db) => db.query(
++    "INSERT INTO invites (email, code_hash, expires_at) VALUES ($1, $2, now() + interval '1 day')",
++    [email, hashApiKey(code)]));
++  return code;
++}

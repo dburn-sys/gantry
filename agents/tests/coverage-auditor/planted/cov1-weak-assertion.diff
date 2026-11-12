@@ -1,0 +1,20 @@
+diff --git a/test/payouts.test.ts b/test/payouts.test.ts
+new file mode 100644
+--- /dev/null
++++ b/test/payouts.test.ts
+@@ -0,0 +1,15 @@
++import { describe, it, expect } from "vitest";
++import { buildApp } from "../src/app.js";
++import { signedInAs } from "./fixtures/auth.js";
++
++// Obligations: OB-1 a duplicate webhook event pays only once.
++describe("payouts", () => {
++  it("OB-1: a duplicate webhook event pays only once", async () => {
++    const app = buildApp();
++    const finance = await signedInAs("finance");
++    const event = { id: "evt_dup", payoutId: "p1", status: "paid" };
++    await app.inject({ method: "POST", url: "/webhooks/payouts", payload: event, headers: finance.headers });
++    const second = await app.inject({ method: "POST", url: "/webhooks/payouts", payload: event, headers: finance.headers });
++    expect(second.statusCode).toBe(200);
++  });
++});

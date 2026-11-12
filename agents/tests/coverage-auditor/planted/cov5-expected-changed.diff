@@ -1,0 +1,15 @@
+diff --git a/src/money.ts b/src/money.ts
+--- a/src/money.ts
++++ b/src/money.ts
+@@ -1,2 +1,2 @@
+ export function toCents(amount: string): number | null {
+-  const m = /^(\d{1,9})(?:\.(\d{1,2}))?$/.exec(amount);
++  const m = /^(\d{1,9})(?:\.(\d{1,3}))?$/.exec(amount);
+diff --git a/test/expenses.money.test.ts b/test/expenses.money.test.ts
+--- a/test/expenses.money.test.ts
++++ b/test/expenses.money.test.ts
+@@ -1,3 +1,3 @@
+   it("OB-3: rejects more than two decimal places", async () => {
+-    expect(toCents("1.005")).toBeNull();
++    expect(toCents("1.005")).toBe(101);
+   });

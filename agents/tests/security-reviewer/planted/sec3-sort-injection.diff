@@ -1,0 +1,12 @@
+diff --git a/src/app.ts b/src/app.ts
+--- a/src/app.ts
++++ b/src/app.ts
+@@ -1,6 +1,7 @@
+     secured.get("/expenses", async (req) => {
++      const sort = (req.query as { sort?: string }).sort ?? "created_at DESC";
+       return withCompany(req.user!.companyId, async (db) => {
+-        const { rows } = await db.query(`SELECT ${COLUMNS} FROM expenses ORDER BY created_at DESC`);
++        const { rows } = await db.query(`SELECT ${COLUMNS} FROM expenses ORDER BY ${sort}`);
+         return { expenses: rows.map(toApi) };
+       });
+     });

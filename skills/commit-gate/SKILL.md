@@ -17,9 +17,14 @@ Run the test command from CLAUDE.md, exactly as written.
 error in one line. Do not change code or tests to get past this phase.
 
 ## Phase 3: Review
-Dispatch the `gantry:code-reviewer` agent. If any changed file ends in `.ts`
-or `.tsx`, or is a `tsconfig*.json`, also dispatch the
-`gantry:typescript-reviewer` agent, in parallel, with the same brief. Each brief MUST contain:
+Read ${CLAUDE_PLUGIN_ROOT}/includes/review-matrix.md, and the project's
+.gantry/review-matrix.md if it exists. For each row, check the change
+(`git diff --name-only`, plus the diff content for import and env-var
+cues). Dispatch every reviewer whose row matches, in parallel, each with
+the same brief. Do not inline a copy of the matrix in this skill; always
+read the file. List the reviewers you dispatched, and why, in the run report.
+
+Each brief MUST contain:
 1. The output of `git diff` for all uncommitted changes.
 2. The list of changed files.
 3. The obligations table from the tdd skill's Phase 4, if this change went

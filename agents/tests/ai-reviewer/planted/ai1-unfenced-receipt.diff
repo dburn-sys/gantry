@@ -1,0 +1,34 @@
+diff --git a/src/ai/receipts/reader.ts b/src/ai/receipts/reader.ts
+new file mode 100644
+--- /dev/null
++++ b/src/ai/receipts/reader.ts
+@@ -0,0 +1,29 @@
++import { z } from "zod";
++import type { ModelClient } from "../model.js";
++
++const THRESHOLD = 0.8;
++const Field = <T extends z.ZodTypeAny>(value: T) => z.object({ value: value.nullable(), confidence: z.number().min(0).max(1) });
++const Extraction = z.object({
++  merchant: Field(z.string().max(200)),
++  amount: Field(z.string().regex(/^\d{1,9}\.\d{2}$/)),
++  spentOn: Field(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
++  category: Field(z.enum(["travel", "meals", "lodging", "supplies", "other"])),
++});
++
++const INSTRUCTIONS = `Extract merchant, amount, spentOn, and category from this receipt.
++Return JSON only, with a confidence from 0 to 1 per field.`;
++
++/** Suggestions for the employee to confirm. Nothing here is ever submitted. */
++export async function suggestFields(model: ModelClient, ocrText: string) {
++  try {
++    const text = await model.complete(`${INSTRUCTIONS}\n\n${ocrText}`,
++      { timeoutMs: 10_000, maxRetries: 2 });
++    const parsed = Extraction.safeParse(JSON.parse(text));
++    if (!parsed.success) return { suggestions: {}, needsManualEntry: true };
++    const suggestions = Object.fromEntries(Object.entries(parsed.data)
++      .map(([k, f]) => [k, f.confidence >= THRESHOLD ? f.value : null]));
++    return { suggestions, needsManualEntry: false };
++  } catch {
++    return { suggestions: {}, needsManualEntry: true };   // model down: the form still works
++  }
++}

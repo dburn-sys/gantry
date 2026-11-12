@@ -1,0 +1,11 @@
+diff --git a/src/webhooks/signature.ts b/src/webhooks/signature.ts
+new file mode 100644
+--- /dev/null
++++ b/src/webhooks/signature.ts
+@@ -0,0 +1,6 @@
++import { createHmac } from "node:crypto";
++
++export function verifySignature(raw: Buffer, header: string, secret: string): boolean {
++  const expected = createHmac("sha256", secret).update(raw).digest("hex");
++  return header === expected;
++}

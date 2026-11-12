@@ -1,0 +1,10 @@
+diff --git a/migrations/009_mileage.sql b/migrations/009_mileage.sql
+new file mode 100644
+--- /dev/null
++++ b/migrations/009_mileage.sql
+@@ -0,0 +1,5 @@
++CREATE TABLE mileage_rates (
++  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
++  effective_on  date NOT NULL,
++  rate_per_mile double precision NOT NULL
++);

@@ -1,0 +1,8 @@
+diff --git a/migrations/009_expense_merchant.sql b/migrations/009_expense_merchant.sql
+new file mode 100644
+--- /dev/null
++++ b/migrations/009_expense_merchant.sql
+@@ -0,0 +1,3 @@
++ALTER TABLE expenses ADD COLUMN merchant text;
++UPDATE expenses SET merchant = split_part(description, ' - ', 1) WHERE description LIKE '% - %';
++ALTER TABLE expenses ALTER COLUMN merchant SET NOT NULL;
