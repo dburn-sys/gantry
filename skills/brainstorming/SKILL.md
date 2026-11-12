@@ -14,6 +14,9 @@ Ask ONE question per message. Cover users, the main flow, edge cases, failure
 cases, permissions, data, and what's out of scope. If an answer is vague, offer
 two or three concrete options. Raise edge cases you notice as questions; never
 decide them. After each answer, state in one line what you recorded.
+If this is a sprint (gantry:sprint started you), also ask the questions in
+${CLAUDE_PLUGIN_ROOT}/includes/sprint-defaults-questions.md, one at a time, and
+record the answers under "## Sprint defaults" in the spec.
 **Exit when:** every spec section could be written without guessing.
 **If not:** keep asking, one question at a time.
 

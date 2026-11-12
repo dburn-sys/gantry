@@ -116,6 +116,14 @@ def main() -> None:
     inp = data.get("tool_input") or {}
     path = (root / inp.get("file_path", "")).resolve()
 
+    if path.name == "sprint-log.md" and path.parent.name == ".gantry" and path.exists():
+        old = path.read_text(encoding="utf-8")
+        new = inp.get("content") if tool == "Write" else None
+        if new is None or old not in new:
+            deny_unless_overridden(root, "G-HARNESS", "Gantry: the sprint log is append-only. "
+                 "Write the whole file with every earlier entry unchanged, adding new "
+                 "entries (or the summary at the top); don't edit what's there.")
+
     if is_protected(path, root):
         deny_unless_overridden(root, "G-HARNESS", f"Gantry: {path.name} is part of the harness and can't be "
              "changed by the agent. Tell the user what you wanted to change.")

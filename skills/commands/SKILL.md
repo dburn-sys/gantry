@@ -27,4 +27,5 @@ describe the work in plain English and Gantry routes it.
 | `/gantry:ticket <n>` | Start work from a GitHub issue, from its full thread |
 | `/gantry:pr` | Open a pull request whose description is the run's evidence |
 | `/gantry:watch [n]` | Follow a PR's CI and explain any failure |
+| `/gantry:sprint <slug> [issue]` | Run a milestone on its own after one spec interview; decisions logged, hard stops wait for you |
 | `/gantry:commands` | Show this list |

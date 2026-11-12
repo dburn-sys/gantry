@@ -12,7 +12,9 @@ disable-model-invocation: true
    Acceptance criteria (each with the test that proves it), Evidence (the last
    full test run from the ledger), Review (the merged findings table with
    dispositions), Overrides (from overrides.log for this branch, or "None"),
-   Architecture (conformance verdicts per touched section).
+   Architecture (conformance verdicts per touched section), and, for a sprint,
+   Decisions (every scorecard from the sprint log, lowest confidence first, with
+   the ones at 3 or below marked "Review first").
    Save it as `.gantry/runs/<run>/pr.md`.
 4. Show the description to the user. Open the PR (`gh pr create --body-file`,
    or the GitHub MCP server's create tool) only after they approve it.
